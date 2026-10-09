@@ -1,0 +1,24 @@
+[project]
+name = "itanongmo-local-triage"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "torch>=2.6,<3",
+    "transformers>=4.57,<5",
+    "sentencepiece>=0.2,<0.3",
+    "protobuf>=5,<7",
+]
+
+[dependency-groups]
+dev = ["ruff>=0.14,<1"]
+
+[tool.uv]
+package = false
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
