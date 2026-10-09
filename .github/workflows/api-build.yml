@@ -1,0 +1,25 @@
+name: Build Linux Rust API
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install Rust
+        run: rustup toolchain install 1.98.0 --profile minimal
+      - name: Build release binary
+        run: cargo +1.98.0 build --release --locked
+      - name: Upload deploy artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: itanongmo-linux-api
+          path: target/release/itanongmo
+          if-no-files-found: error
+          retention-days: 1

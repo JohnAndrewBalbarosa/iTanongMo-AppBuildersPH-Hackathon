@@ -39,13 +39,40 @@ struct AgencyDestination {
 }
 
 pub async fn create_request(pool: &SqlitePool, input: NewRequest) -> AppResult<SubmissionBatch> {
+    create_request_for(pool, input, None).await
+}
+
+pub async fn create_request_for(
+    pool: &SqlitePool,
+    input: NewRequest,
+    authenticated_requester_id: Option<&str>,
+) -> AppResult<SubmissionBatch> {
     let agency_ids = selected_agency_ids(&input.agency_ids)?;
     validate(&input, agency_ids.len())?;
-    enforce_submission_rate(pool, &input.requester_email).await?;
+    let authenticated_requester = if let Some(requester_id) = authenticated_requester_id {
+        Some(
+            sqlx::query_as::<_, (String, String)>(
+                "SELECT display_name,contact_email FROM requesters WHERE id=?",
+            )
+            .bind(requester_id)
+            .fetch_optional(pool)
+            .await?
+            .ok_or(AppError::AuthenticationRequired)?,
+        )
+    } else {
+        None
+    };
+    let rate_email = authenticated_requester
+        .as_ref()
+        .map(|(_, email)| email.as_str())
+        .unwrap_or(&input.requester_email);
+    enforce_submission_rate(pool, rate_email).await?;
     let agencies = load_destinations(pool, &agency_ids).await?;
     let now = Utc::now();
     let due = initial_due_date(pool, now.date_naive()).await?;
-    let requester_id = Uuid::new_v4().to_string();
+    let requester_id = authenticated_requester_id
+        .map(str::to_owned)
+        .unwrap_or_else(|| Uuid::new_v4().to_string());
     let batch_id = Uuid::new_v4().to_string();
     let batch_reference = batch_reference();
     let requester_access_token = requester_access_token();
@@ -53,8 +80,10 @@ pub async fn create_request(pool: &SqlitePool, input: NewRequest) -> AppResult<S
     let mut created_request_ids = Vec::with_capacity(agencies.len());
     let mut transaction = pool.begin().await?;
 
-    sqlx::query("INSERT INTO requesters(id,display_name,contact_email,consent_version,created_at) VALUES (?,?,?,?,?)")
-        .bind(&requester_id).bind(input.requester_name.trim()).bind(input.requester_email.trim()).bind("demo-v2").bind(now.to_rfc3339()).execute(&mut *transaction).await?;
+    if authenticated_requester.is_none() {
+        sqlx::query("INSERT INTO requesters(id,display_name,contact_email,consent_version,created_at) VALUES (?,?,?,?,?)")
+            .bind(&requester_id).bind(input.requester_name.trim()).bind(input.requester_email.trim()).bind("demo-v2").bind(now.to_rfc3339()).execute(&mut *transaction).await?;
+    }
     sqlx::query(
         "INSERT INTO request_batches(id,batch_reference,requester_id,created_at,requester_access_hash) VALUES (?,?,?,?,?)",
     )

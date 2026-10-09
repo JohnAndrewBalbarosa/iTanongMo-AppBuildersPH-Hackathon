@@ -2,6 +2,12 @@
 
 ## Install
 
+### Lightsail HTTPS demo
+
+`deploy/Caddyfile` serves `https://54-179-96-27.sslip.io` and proxies to the Rust service on `127.0.0.1:4320`. The hostname resolves to the Lightsail static IP; keep the IP assigned to this instance. Permit inbound TCP 80 and 443 in the Lightsail firewall. Caddy obtains and renews a public certificate automatically. Back up the database, service binary, environment, and existing Nginx configuration before switching the reverse proxy. Set `ITANONGMO_PUBLIC_ORIGIN=https://54-179-96-27.sslip.io` and `ITANONGMO_FRONTEND_ORIGIN=https://johnandrewbalbarosa.github.io`. Set the GitHub repository variable `ITANONGMO_API_BASE_URL` to `https://54-179-96-27.sslip.io`, then redeploy Pages. Keep the Rust service bound to loopback.
+
+The public demo accounts and seeded requests are synthetic; do not use this deployment for real personal or government data. Browser session cookies use `SameSite=None; Secure`, so browsers that block third-party cookies may require a first-party domain arrangement for login.
+
 1. Build the Linux release binary in CI or on a compatible build host.
 2. Create the `itanongmo` system user and `/opt/itanongmo/bin`, `/var/lib/itanongmo/files`, and `/var/backups/itanongmo` directories.
 3. Copy the binary, `deploy/backup.sh`, systemd units, and Nginx configuration. Mark `backup.sh` executable.

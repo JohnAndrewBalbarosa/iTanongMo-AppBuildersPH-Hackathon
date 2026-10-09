@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="fil">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Submit and track public information requests through iTanongMo.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src https: http://127.0.0.1:* http://localhost:*; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <title>Citizen portal — iTanongMo</title>
+</head>
+<body data-portal-page="citizen">
+  <header><a href="index.html">iTanongMo</a></header>
+  <main class="portal-dashboard">
+    <div class="portal-heading">
+      <div>
+        <p class="eyebrow">Citizen portal</p>
+        <h1>Good day, <span data-user-name>Citizen</span></h1>
+        <p>Request public records and keep every government response in one clear timeline.</p>
+      </div>
+      <button type="button" id="portal-logout" class="portal-switch-link">Sign out</button>
+    </div>
+
+    <section class="portal-stat-grid" aria-label="Request summary">
+      <article><strong id="citizen-total">0</strong><span>Total requests</span></article>
+      <article><strong id="citizen-active">0</strong><span>Active reviews</span></article>
+      <article><strong id="citizen-responses">0</strong><span>Responses received</span></article>
+    </section>
+
+    <div class="citizen-workspace">
+      <section class="portal-panel request-composer" aria-labelledby="new-request-title">
+        <p class="eyebrow">New request</p>
+        <h2 id="new-request-title">Ask for public information</h2>
+        <form id="citizen-request-form">
+          <label for="citizen-agency">Government agency</label>
+          <select id="citizen-agency" name="agency_ids" required></select>
+          <label for="citizen-requester-email">Contact email</label>
+          <input id="citizen-requester-email" name="requester_email" type="email" autocomplete="email" required>
+          <label for="citizen-request-title">Request title</label>
+          <input id="citizen-request-title" name="title" minlength="5" maxlength="180" placeholder="What records do you need?" required>
+          <label for="citizen-request-details">Request details</label>
+          <textarea id="citizen-request-details" name="description" minlength="20" maxlength="8000" placeholder="Include dates, offices, or specific records." required></textarea>
+          <label for="citizen-request-purpose">Purpose</label>
+          <textarea id="citizen-request-purpose" name="purpose" minlength="3" maxlength="1000" required></textarea>
+          <label for="citizen-request-urgency">Urgency or safety context (optional)</label>
+          <textarea id="citizen-request-urgency" name="urgency_details" maxlength="1000"></textarea>
+          <label><input name="consent" type="checkbox" value="yes" required> I acknowledge the demo privacy notice.</label>
+          <button type="submit" class="portal-primary-action">Submit request</button>
+        </form>
+        <p id="citizen-submit-status" class="form-status" role="status"></p>
+      </section>
+
+      <section class="portal-panel tracking-panel" aria-labelledby="tracking-title">
+        <div class="panel-heading-row">
+          <div>
+            <p class="eyebrow">Tracking</p>
+            <h2 id="tracking-title">Your requests</h2>
+          </div>
+          <button type="button" id="citizen-refresh">Refresh</button>
+        </div>
+        <div id="citizen-request-list" class="request-list"></div>
+        <article id="citizen-request-detail" class="request-detail" aria-live="polite"></article>
+      </section>
+    </div>
+  </main>
+  <script src="config.js"></script>
+  <script src="assets/site.js"></script>
+  <script src="assets/portal.js"></script>
+</body>
+</html>

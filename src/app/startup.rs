@@ -9,6 +9,7 @@ use tokio::net::TcpListener;
 
 use crate::{
     ai::{self, ModalAiProvider},
+    auth::{AuthService, seed_demo_auth},
     error::AppResult,
     organization,
     requester_ai::RequesterAiService,
@@ -36,6 +37,7 @@ pub async fn start() -> AppResult<RunningApp> {
         reset_demo_data(&pool).await?;
     }
     organization::seed_reference_data(&pool).await?;
+    seed_demo_auth(&pool).await?;
     let ai = match (&config.ai_base_url, &config.ai_proxy_token) {
         (Some(base_url), Some(token)) => Some(Arc::new(ModalAiProvider::new(
             base_url.clone(),
@@ -54,6 +56,7 @@ pub async fn start() -> AppResult<RunningApp> {
     let state = AppState {
         pool,
         config: config.clone(),
+        auth: AuthService::new()?,
         ai,
         requester_ai: RequesterAiService::new()?,
     };
@@ -95,6 +98,8 @@ fn spawn_ai_worker(state: AppState) {
 async fn reset_demo_data(pool: &SqlitePool) -> AppResult<()> {
     let mut transaction = pool.begin().await?;
     for table in [
+        "auth_sessions",
+        "auth_users",
         "notifications",
         "released_documents",
         "ai_draft_reviews",

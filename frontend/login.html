@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="fil">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Sign in to the iTanongMo citizen and government portals.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src https: http://127.0.0.1:* http://localhost:*; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <title>Sign in — iTanongMo</title>
+</head>
+<body data-portal-page="login">
+  <header><a href="index.html">iTanongMo</a></header>
+  <main class="portal-entry">
+    <section class="portal-introduction" aria-labelledby="portal-title">
+      <p class="eyebrow">One public information service</p>
+      <h1 id="portal-title">Access the right side of every request</h1>
+      <p>Citizens can submit and track requests. Government teams can triage cases, coordinate action, and send clear responses.</p>
+      <div class="portal-feature-list" aria-label="Portal capabilities">
+        <p><strong>Citizen portal</strong><br>Request information and follow every update.</p>
+        <p><strong>Government portal</strong><br>Review, triage, and respond from one workspace.</p>
+      </div>
+    </section>
+    <section class="sign-in-panel" aria-labelledby="sign-in-title">
+      <p class="eyebrow">Secure access</p>
+      <h2 id="sign-in-title">Sign in to iTanongMo</h2>
+      <form id="portal-sign-in">
+        <label for="sign-in-email">Email address</label>
+        <input id="sign-in-email" name="email" type="email" autocomplete="username" placeholder="name@example.com" required>
+        <label for="sign-in-password">Password</label>
+        <input id="sign-in-password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+        <button type="submit" class="portal-primary-action">Continue to portal</button>
+      </form>
+      <p id="sign-in-status" class="form-status" role="status"></p>
+      <details class="demo-accounts">
+        <summary>Demo accounts</summary>
+        <p>Citizen: <code>citizen.judge@itanongmo.local</code> / <code>CitizenJudge2026!</code></p>
+        <p>Government: <code>officer.judge@itanongmo.local</code> / <code>OfficerJudge2026!</code></p>
+      </details>
+    </section>
+  </main>
+  <script src="config.js"></script>
+  <script src="assets/site.js"></script>
+  <script src="assets/portal.js"></script>
+</body>
+</html>

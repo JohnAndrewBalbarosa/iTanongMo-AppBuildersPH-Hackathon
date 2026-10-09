@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="fil">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Triage and respond to public information requests through iTanongMo.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src https: http://127.0.0.1:* http://localhost:*; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <title>Government portal — iTanongMo</title>
+</head>
+<body data-portal-page="government">
+  <header><a href="index.html">iTanongMo</a></header>
+  <main class="portal-dashboard government-portal">
+    <div class="portal-heading">
+      <div>
+        <p class="eyebrow">Government portal</p>
+        <h1>Information request workspace</h1>
+        <p>Review incoming cases, apply consistent triage, and keep citizens informed.</p>
+      </div>
+      <button type="button" id="portal-logout" class="portal-switch-link">Sign out</button>
+    </div>
+
+    <section class="portal-stat-grid" aria-label="Case summary">
+      <article><strong id="government-new">0</strong><span>New cases</span></article>
+      <article><strong id="government-review">0</strong><span>Under review</span></article>
+      <article><strong id="government-ready">0</strong><span>For response</span></article>
+    </section>
+
+    <section class="portal-panel board-panel" aria-labelledby="board-title">
+      <div class="panel-heading-row">
+        <div>
+          <p class="eyebrow">Case management</p>
+          <h2 id="board-title">Request board</h2>
+        </div>
+        <button type="button" id="government-refresh">Refresh</button>
+      </div>
+      <div id="government-board-demo" class="kanban-board"></div>
+    </section>
+
+    <section id="government-case-panel" class="portal-panel case-workbench" aria-labelledby="government-case-title">
+      <div class="case-summary">
+        <p class="eyebrow">Selected request</p>
+        <h2 id="government-case-title">Choose a request</h2>
+        <p id="government-case-meta"></p>
+        <p id="government-case-description"></p>
+        <div id="government-case-timeline" class="case-timeline"></div>
+      </div>
+      <div class="case-actions">
+        <form id="triage-form">
+          <h3>Triage case</h3>
+          <label for="triage-category-demo">Category</label>
+          <select id="triage-category-demo">
+            <option>Infrastructure and procurement</option>
+            <option>Agriculture and food security</option>
+            <option>Public health</option>
+            <option>Education</option>
+            <option>General public records</option>
+          </select>
+          <label for="triage-unit-demo">Assign to unit</label>
+          <select id="triage-unit-demo"></select>
+          <button type="submit">Apply triage</button>
+          <button type="button" id="route-case">Route to unit</button>
+        </form>
+        <form id="government-reply-form">
+          <h3>Reply to citizen</h3>
+          <label for="government-reply-demo">Public response</label>
+          <textarea id="government-reply-demo" maxlength="2000" placeholder="Write a clear status update or response." required></textarea>
+          <button type="submit" class="portal-primary-action">Send response</button>
+        </form>
+        <p id="government-action-status" class="form-status" role="status"></p>
+      </div>
+    </section>
+  </main>
+  <script src="config.js"></script>
+  <script src="assets/site.js"></script>
+  <script src="assets/portal.js"></script>
+</body>
+</html>

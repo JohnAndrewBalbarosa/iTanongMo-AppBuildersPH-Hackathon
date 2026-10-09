@@ -22,6 +22,7 @@ async fn database() -> SqlitePool {
         .unwrap();
     sqlx::migrate!().run(&pool).await.unwrap();
     organization::seed_reference_data(&pool).await.unwrap();
+    itanongmo::auth::seed_demo_auth(&pool).await.unwrap();
     pool
 }
 
@@ -52,6 +53,10 @@ fn government_actor(role: Role) -> ActorContext {
 }
 
 fn api(pool: SqlitePool) -> axum::Router {
+    api_with_persona_login(pool, false)
+}
+
+fn api_with_persona_login(pool: SqlitePool, enable_persona_login: bool) -> axum::Router {
     let config = AppConfig {
         bind: "127.0.0.1:0".into(),
         database_url: "sqlite::memory:".into(),
@@ -64,10 +69,12 @@ fn api(pool: SqlitePool) -> axum::Router {
         requester_ai_enabled: false,
         requester_ai_token_ttl_seconds: 900,
         demo_reset_on_start: false,
+        enable_persona_login,
     };
     itanongmo::app::router(AppState {
         pool,
         config: Arc::new(config),
+        auth: itanongmo::auth::AuthService::new().unwrap(),
         ai: None,
         requester_ai: itanongmo::requester_ai::RequesterAiService::new().unwrap(),
     })
@@ -235,7 +242,7 @@ async fn cors_preflight_never_echoes_an_unconfigured_origin() {
         .unwrap();
     assert_eq!(
         response.headers().get(header::ACCESS_CONTROL_ALLOW_ORIGIN),
-        Some(&"https://example.github.io".parse().unwrap())
+        None
     );
     assert_ne!(
         response.headers().get(header::ACCESS_CONTROL_ALLOW_ORIGIN),
@@ -305,7 +312,7 @@ async fn backend_exposes_json_only_and_does_not_register_legacy_html_routes() {
 }
 
 #[tokio::test]
-async fn government_session_is_json_and_uses_a_bounded_http_only_cookie() {
+async fn legacy_persona_login_is_disabled_by_default() {
     let pool = database().await;
     let persona_id: String = sqlx::query_scalar(
         "SELECT id FROM demo_personas WHERE actor_type='staff' AND active=1 LIMIT 1",
@@ -325,25 +332,14 @@ async fn government_session_is_json_and_uses_a_bounded_http_only_cookie() {
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(response.status(), StatusCode::METHOD_NOT_ALLOWED);
     assert_eq!(
         response
             .headers()
-            .get(header::ACCESS_CONTROL_ALLOW_CREDENTIALS),
-        Some(&"true".parse().unwrap())
-    );
-    let cookies = response
-        .headers()
-        .get_all(header::SET_COOKIE)
-        .iter()
-        .map(|value| value.to_str().unwrap())
-        .collect::<Vec<_>>();
-    assert_eq!(cookies.len(), 2);
-    assert!(cookies.iter().all(|cookie| cookie.contains("HttpOnly")));
-    assert!(
-        cookies
+            .get_all(header::SET_COOKIE)
             .iter()
-            .all(|cookie| cookie.contains("Path=/api/v1/government"))
+            .count(),
+        0
     );
 }
 
@@ -529,7 +525,19 @@ async fn ai_draft_publish_requires_matching_hash_review_and_single_use() {
         .execute(&pool)
         .await
         .unwrap();
-    let app = api(pool.clone());
+    let password_hash: String =
+        sqlx::query_scalar("SELECT password_hash FROM auth_users WHERE id='auth-officer-judge'")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    sqlx::query("INSERT INTO auth_users(id,email,password_hash,persona_id,requester_id,active,created_at,updated_at) VALUES ('auth-decision-test','decision@example.test',?,'dost-decision',NULL,1,?,?)")
+        .bind(password_hash)
+        .bind(&now)
+        .bind(&now)
+        .execute(&pool)
+        .await
+        .unwrap();
+    let app = api_with_persona_login(pool.clone(), true);
     let session_response = app
         .clone()
         .oneshot(
@@ -540,6 +548,16 @@ async fn ai_draft_publish_requires_matching_hash_review_and_single_use() {
         )
         .await
         .unwrap();
+    let cookie = session_response
+        .headers()
+        .get(header::SET_COOKIE)
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .split(';')
+        .next()
+        .unwrap()
+        .to_owned();
     let session_body = session_response
         .into_body()
         .collect()
@@ -548,7 +566,6 @@ async fn ai_draft_publish_requires_matching_hash_review_and_single_use() {
         .to_bytes();
     let session: serde_json::Value = serde_json::from_slice(&session_body).unwrap();
     let csrf = session["data"]["csrf_token"].as_str().unwrap();
-    let cookie = format!("demo_persona=dost-decision; demo_csrf={csrf}");
     let publish_path = format!(
         "/api/v1/government/requests/{}/ai-drafts/{job_id}/publish",
         batch.requests[0].public_reference

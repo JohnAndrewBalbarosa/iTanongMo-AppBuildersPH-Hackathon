@@ -14,6 +14,7 @@
 pub mod ai;
 pub mod app;
 pub mod audit;
+pub mod auth;
 pub mod board;
 pub mod error;
 pub mod identity;

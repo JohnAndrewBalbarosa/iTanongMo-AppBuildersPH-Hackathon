@@ -2,7 +2,7 @@ use axum::{
     Json, Router,
     body::Body,
     extract::{DefaultBodyLimit, Multipart, Path, Query, State},
-    http::{HeaderMap, HeaderValue, Method, Request, StatusCode, header},
+    http::{HeaderMap, HeaderName, HeaderValue, Method, Request, StatusCode, header},
     middleware::{self, Next},
     response::{IntoResponse, Response},
     routing::{get, post},
@@ -11,10 +11,14 @@ use chrono::Utc;
 use serde::Deserialize;
 use serde_json::json;
 use sha2::{Digest, Sha256};
-use tower_http::{cors::CorsLayer, limit::RequestBodyLimitLayer, trace::TraceLayer};
+use tower_http::{
+    cors::{AllowOrigin, CorsLayer},
+    limit::RequestBodyLimitLayer,
+    trace::TraceLayer,
+};
 
 use crate::{
-    ai, board,
+    ai, auth, board,
     error::{AppError, AppResult},
     identity::{self, ActorContext, ActorType, Role, can_write_request},
     notifications, organization,
@@ -41,11 +45,9 @@ pub fn router(state: AppState) -> Router {
         )
         .route("/api/v1/requests/{reference}/appeals", post(public_appeal))
         .route("/api/v1/notifications", get(api_notifications))
-        .route("/api/v1/government/personas", get(personas))
-        .route(
-            "/api/v1/government/session",
-            get(government_session).post(select_persona),
-        )
+        .route("/api/v1/citizen/requests", get(citizen_requests))
+        .route("/api/v1/citizen/requests/{reference}", get(citizen_request))
+        .route("/api/v1/government/session", get(government_session))
         .route("/api/v1/government/board", get(government_dashboard))
         .route(
             "/api/v1/government/requests/{reference}",
@@ -79,14 +81,34 @@ pub fn router(state: AppState) -> Router {
             "/api/v1/government/reports/requests.csv",
             get(government_csv),
         )
-        .route("/api/v1/documents/{id}", get(download_document));
+        .route("/api/v1/documents/{id}", get(download_document))
+        .merge(auth::routes());
+    if state.config.enable_persona_login {
+        api = api
+            .route("/api/v1/government/personas", get(personas))
+            .route("/api/v1/government/session", post(select_persona));
+    }
     if let Some(origin) = &state.config.frontend_origin {
         let origin = HeaderValue::from_str(origin).expect("validated frontend origin");
         api = api.layer(
             CorsLayer::new()
-                .allow_origin(origin)
-                .allow_methods([Method::GET, Method::POST])
-                .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION])
+                .allow_origin(AllowOrigin::predicate(move |request_origin, _| {
+                    request_origin == origin
+                }))
+                .allow_methods([
+                    Method::GET,
+                    Method::POST,
+                    Method::PUT,
+                    Method::PATCH,
+                    Method::DELETE,
+                    Method::OPTIONS,
+                ])
+                .allow_headers([
+                    header::CONTENT_TYPE,
+                    header::AUTHORIZATION,
+                    HeaderName::from_static("x-csrf-token"),
+                ])
+                .vary([header::ORIGIN])
                 .allow_credentials(true),
         );
     }
@@ -198,31 +220,22 @@ async fn select_persona(
     if actor.actor_type == ActorType::Requester {
         return Err(AppError::Forbidden);
     }
-    let csrf = uuid::Uuid::new_v4().simple().to_string();
-    let secure = if state.config.public_origin.starts_with("https://") {
-        "; Secure"
-    } else {
-        ""
-    };
-    let same_site = if secure.is_empty() { "Lax" } else { "None" };
+    let account = sqlx::query_as::<_, (String, Option<String>)>(
+        "SELECT id,requester_id FROM auth_users WHERE persona_id=? AND active=1",
+    )
+    .bind(&input.persona_id)
+    .fetch_optional(&state.pool)
+    .await?
+    .ok_or(AppError::Forbidden)?;
+    let created =
+        auth::session::create(&state.pool, &account.0, &input.persona_id, account.1).await?;
     let mut response = Json(json!({
-        "data": government_session_json(&actor, &csrf)
+        "data": auth::session_json(&actor, &created.csrf_token, created.context.expires_at)
     }))
     .into_response();
     response.headers_mut().append(
         header::SET_COOKIE,
-        HeaderValue::from_str(&format!(
-            "demo_persona={}; Path=/api/v1/government; HttpOnly; SameSite={same_site}{secure}",
-            input.persona_id
-        ))
-        .map_err(|_| AppError::Internal)?,
-    );
-    response.headers_mut().append(
-        header::SET_COOKIE,
-        HeaderValue::from_str(&format!(
-            "demo_csrf={csrf}; Path=/api/v1/government; HttpOnly; SameSite={same_site}{secure}"
-        ))
-        .map_err(|_| AppError::Internal)?,
+        auth::session::set_cookie_header(&created.session_token, &state.config.public_origin)?,
     );
     Ok(response)
 }
@@ -231,7 +244,7 @@ async fn government_session(
     State(state): State<AppState>,
     headers: HeaderMap,
 ) -> AppResult<Json<serde_json::Value>> {
-    let (actor, csrf) = government_context(&state, &headers).await?;
+    let (actor, csrf) = government_read_context(&state, &headers).await?;
     Ok(Json(json!({
         "data": government_session_json(&actor, &csrf)
     })))
@@ -254,7 +267,7 @@ async fn government_dashboard(
     State(state): State<AppState>,
     headers: HeaderMap,
 ) -> AppResult<Json<serde_json::Value>> {
-    let (actor, csrf) = government_context(&state, &headers).await?;
+    let (actor, csrf) = government_read_context(&state, &headers).await?;
     let agency_id = actor.agency_id.as_deref().ok_or(AppError::Forbidden)?;
     let cards = board::load_board(&state.pool, agency_id).await?;
     let notifications = notifications::list_for_persona(&state.pool, &actor.subject_id).await?;
@@ -289,7 +302,7 @@ async fn government_request(
     headers: HeaderMap,
     Path(reference): Path<String>,
 ) -> AppResult<Json<serde_json::Value>> {
-    let (actor, csrf) = government_context(&state, &headers).await?;
+    let (actor, csrf) = government_read_context(&state, &headers).await?;
     let request = requests::load_request(&state.pool, &reference).await?;
     ensure_government_read(&actor, &request.agency_id)?;
     let events = requests::list_events(&state.pool, &request.id).await?;
@@ -372,6 +385,7 @@ async fn government_request(
 
 #[derive(Deserialize)]
 struct ActionForm {
+    #[serde(default)]
     csrf_token: String,
     action: String,
     #[serde(default)]
@@ -386,8 +400,9 @@ async fn government_action(
     Path(reference): Path<String>,
     Json(form): Json<ActionForm>,
 ) -> AppResult<Json<serde_json::Value>> {
-    let (actor, csrf) = government_context(&state, &headers).await?;
-    verify_csrf(&csrf, &form.csrf_token)?;
+    let authenticated = government_context(&state, &headers).await?;
+    auth::session::verify_csrf(&authenticated, &headers, Some(&form.csrf_token))?;
+    let actor = authenticated.actor;
     let request = requests::load_request(&state.pool, &reference).await?;
     let action = Action::parse(&form.action)
         .ok_or_else(|| AppError::Validation("Invalid workflow action".into()))?;
@@ -407,6 +422,7 @@ async fn government_action(
 
 #[derive(Deserialize)]
 struct GovernmentMessageForm {
+    #[serde(default)]
     csrf_token: String,
     visibility: String,
     body: String,
@@ -418,11 +434,12 @@ async fn government_message(
     Path(reference): Path<String>,
     Json(form): Json<GovernmentMessageForm>,
 ) -> AppResult<(StatusCode, Json<serde_json::Value>)> {
-    let (actor, csrf) = government_context(&state, &headers).await?;
-    verify_csrf(&csrf, &form.csrf_token)?;
+    let authenticated = government_context(&state, &headers).await?;
+    auth::session::verify_csrf(&authenticated, &headers, Some(&form.csrf_token))?;
+    let actor = authenticated.actor;
     let request = requests::load_request(&state.pool, &reference).await?;
     if !can_write_request(&actor, &request.agency_id) {
-        return Err(AppError::Forbidden);
+        return Err(access_denied(&actor, "government_write_scope"));
     }
     requests::add_message(
         &state.pool,
@@ -440,6 +457,7 @@ async fn government_message(
 
 #[derive(Deserialize)]
 struct TriageForm {
+    #[serde(default)]
     csrf_token: String,
     categories: String,
     #[serde(default)]
@@ -452,11 +470,12 @@ async fn government_triage(
     Path(reference): Path<String>,
     Json(form): Json<TriageForm>,
 ) -> AppResult<Json<serde_json::Value>> {
-    let (actor, csrf) = government_context(&state, &headers).await?;
-    verify_csrf(&csrf, &form.csrf_token)?;
+    let authenticated = government_context(&state, &headers).await?;
+    auth::session::verify_csrf(&authenticated, &headers, Some(&form.csrf_token))?;
+    let actor = authenticated.actor;
     let request = requests::load_request(&state.pool, &reference).await?;
     if !identity::can_triage(&actor, &request.agency_id) {
-        return Err(AppError::Forbidden);
+        return Err(access_denied(&actor, "government_triage_scope"));
     }
     let categories: Vec<String> = form
         .categories
@@ -479,6 +498,7 @@ async fn government_triage(
 
 #[derive(Deserialize)]
 struct AiDraftForm {
+    #[serde(default)]
     csrf_token: String,
     verified_facts: String,
 }
@@ -489,11 +509,12 @@ async fn government_ai_draft(
     Path(reference): Path<String>,
     Json(form): Json<AiDraftForm>,
 ) -> AppResult<(StatusCode, Json<serde_json::Value>)> {
-    let (actor, csrf) = government_context(&state, &headers).await?;
-    verify_csrf(&csrf, &form.csrf_token)?;
+    let authenticated = government_context(&state, &headers).await?;
+    auth::session::verify_csrf(&authenticated, &headers, Some(&form.csrf_token))?;
+    let actor = authenticated.actor;
     let request = requests::load_request(&state.pool, &reference).await?;
     if !can_write_request(&actor, &request.agency_id) {
-        return Err(AppError::Forbidden);
+        return Err(access_denied(&actor, "government_write_scope"));
     }
     ai::queue_government_draft(&state.pool, &actor, &request.id, &form.verified_facts).await?;
     Ok((
@@ -504,6 +525,7 @@ async fn government_ai_draft(
 
 #[derive(Deserialize)]
 struct PublishAiDraftForm {
+    #[serde(default)]
     csrf_token: String,
     source_output_hash: String,
     edited_body: String,
@@ -517,8 +539,9 @@ async fn government_publish_ai_draft(
     Path((reference, job_id)): Path<(String, String)>,
     Json(form): Json<PublishAiDraftForm>,
 ) -> AppResult<Json<serde_json::Value>> {
-    let (actor, csrf) = government_context(&state, &headers).await?;
-    verify_csrf(&csrf, &form.csrf_token)?;
+    let authenticated = government_context(&state, &headers).await?;
+    auth::session::verify_csrf(&authenticated, &headers, Some(&form.csrf_token))?;
+    let actor = authenticated.actor;
     let request = requests::load_request(&state.pool, &reference).await?;
     let may_publish = actor.has_role(Role::AgencyAdmin)
         || actor.has_role(Role::DecisionMaker)
@@ -579,10 +602,11 @@ async fn government_document(
     Path(reference): Path<String>,
     mut multipart: Multipart,
 ) -> AppResult<(StatusCode, Json<serde_json::Value>)> {
-    let (actor, csrf) = government_context(&state, &headers).await?;
+    let authenticated = government_context(&state, &headers).await?;
+    let actor = authenticated.actor.clone();
     let request = requests::load_request(&state.pool, &reference).await?;
     if !can_write_request(&actor, &request.agency_id) {
-        return Err(AppError::Forbidden);
+        return Err(access_denied(&actor, "government_write_scope"));
     }
     let mut submitted_csrf = None;
     let mut title = None;
@@ -625,7 +649,7 @@ async fn government_document(
             _ => {}
         }
     }
-    verify_csrf(&csrf, submitted_csrf.as_deref().unwrap_or_default())?;
+    auth::session::verify_csrf(&authenticated, &headers, submitted_csrf.as_deref())?;
     let (original, media, bytes) =
         file.ok_or_else(|| AppError::Validation("Pumili ng document".into()))?;
     requests::release_document(
@@ -681,7 +705,7 @@ async fn download_document(
 }
 
 async fn government_csv(State(state): State<AppState>, headers: HeaderMap) -> AppResult<Response> {
-    let (actor, _) = government_context(&state, &headers).await?;
+    let actor = government_context(&state, &headers).await?.actor;
     let agency_id = actor.agency_id.as_deref().ok_or(AppError::Forbidden)?;
     let rows: Vec<(String, String, String, String, String)> = sqlx::query_as("SELECT public_reference,title,status,submitted_at,due_at FROM foi_requests WHERE agency_id=? ORDER BY submitted_at")
         .bind(agency_id).fetch_all(&state.pool).await?;
@@ -728,9 +752,18 @@ async fn api_config(State(state): State<AppState>) -> Json<serde_json::Value> {
 
 async fn api_create_submission(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(input): Json<NewRequest>,
 ) -> AppResult<(StatusCode, Json<serde_json::Value>)> {
-    let batch = requests::create_request(&state.pool, input).await?;
+    let authenticated = auth::session::optional(&state.pool, &headers)
+        .await?
+        .map(auth::session::require_requester)
+        .transpose()?;
+    if let Some(session) = &authenticated {
+        auth::session::verify_csrf(session, &headers, None)?;
+    }
+    let requester_id = authenticated.and_then(|session| session.requester_id);
+    let batch = requests::create_request_for(&state.pool, input, requester_id.as_deref()).await?;
     tracing::info!(
         event = "api.submission_created",
         batch_reference = %batch.batch_reference,
@@ -820,6 +853,86 @@ async fn api_requests(State(state): State<AppState>) -> AppResult<Json<serde_jso
     ))
 }
 
+async fn citizen_requests(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> AppResult<Json<serde_json::Value>> {
+    let authenticated =
+        auth::session::require_requester(auth::session::required(&state.pool, &headers).await?)?;
+    let requester_id = authenticated
+        .requester_id
+        .as_deref()
+        .ok_or(AppError::Forbidden)?;
+    let rows = requests::list_owned_requests(&state.pool, requester_id).await?;
+    Ok(Json(json!({
+        "data": {
+            "requests": rows.into_iter().map(|request| json!({
+                "reference": request.public_reference,
+                "title": request.title,
+                "agency": {
+                    "id": request.agency_id,
+                    "name": request.agency_name
+                },
+                "status": request.status,
+                "submitted_at": request.submitted_at,
+                "due_at": request.due_at,
+                "latest_public_message": request.latest_public_message
+            })).collect::<Vec<_>>()
+        }
+    })))
+}
+
+async fn citizen_request(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(reference): Path<String>,
+) -> AppResult<Json<serde_json::Value>> {
+    let authenticated =
+        auth::session::require_requester(auth::session::required(&state.pool, &headers).await?)?;
+    let requester_id = authenticated
+        .requester_id
+        .as_deref()
+        .ok_or(AppError::Forbidden)?;
+    let request = requests::load_owned_request(&state.pool, requester_id, &reference).await?;
+    let events = requests::list_events(&state.pool, &request.id).await?;
+    let messages = requests::list_messages(&state.pool, &request.id, false).await?;
+    let documents = requests::list_documents(&state.pool, &request.id).await?;
+    Ok(Json(json!({
+        "data": {
+            "request": {
+                "reference": request.public_reference,
+                "title": request.title,
+                "description": request.description,
+                "purpose": request.purpose,
+                "agency": {"id":request.agency_id,"name":request.agency_name},
+                "status": request.status,
+                "submitted_at": request.submitted_at,
+                "due_at": request.extended_due_at.unwrap_or(request.due_at)
+            },
+            "timeline": {
+                "events": events.into_iter().map(|event| json!({
+                    "type": event.event_type,
+                    "summary": event.public_summary,
+                    "created_at": event.created_at
+                })).collect::<Vec<_>>(),
+                "messages": messages.into_iter().map(|message| json!({
+                    "actor": message.actor_label,
+                    "body": message.body,
+                    "created_at": message.created_at
+                })).collect::<Vec<_>>(),
+                "documents": documents.into_iter().map(|document| json!({
+                    "id": document.id,
+                    "title": document.title,
+                    "media_type": document.media_type,
+                    "size_bytes": document.byte_length,
+                    "released_at": document.released_at,
+                    "download_url": format!("/api/v1/documents/{}", document.id)
+                })).collect::<Vec<_>>()
+            }
+        }
+    })))
+}
+
 async fn api_request(
     State(state): State<AppState>,
     Path(reference): Path<String>,
@@ -845,7 +958,7 @@ async fn api_notifications(
     State(state): State<AppState>,
     headers: HeaderMap,
 ) -> AppResult<Json<serde_json::Value>> {
-    let (actor, _) = government_context(&state, &headers).await?;
+    let actor = government_context(&state, &headers).await?.actor;
     let rows = notifications::list_for_persona(&state.pool, &actor.subject_id).await?;
     Ok(Json(
         json!({"data":rows.into_iter().map(|n|json!({"id":n.id,"request_id":n.request_id,"kind":n.kind,"message":n.message,"read_at":n.read_at,"created_at":n.created_at})).collect::<Vec<_>>() }),
@@ -855,43 +968,38 @@ async fn api_notifications(
 async fn government_context(
     state: &AppState,
     headers: &HeaderMap,
+) -> AppResult<auth::AuthenticatedSession> {
+    let authenticated = auth::session::required(&state.pool, headers).await?;
+    auth::session::require_government(authenticated)
+}
+
+async fn government_read_context(
+    state: &AppState,
+    headers: &HeaderMap,
 ) -> AppResult<(ActorContext, String)> {
-    let persona = cookie(headers, "demo_persona").ok_or(AppError::Forbidden)?;
-    let csrf = cookie(headers, "demo_csrf").ok_or(AppError::Forbidden)?;
-    let actor = identity::load_actor(&state.pool, &persona).await?;
-    if !matches!(
-        actor.actor_type,
-        ActorType::Staff | ActorType::PlatformAdmin
-    ) {
-        return Err(AppError::Forbidden);
-    }
-    Ok((actor, csrf))
+    let mut authenticated = government_context(state, headers).await?;
+    let csrf = auth::session::rotate_csrf(&state.pool, &mut authenticated).await?;
+    Ok((authenticated.actor, csrf))
 }
 
 fn ensure_government_read(actor: &ActorContext, agency_id: &str) -> AppResult<()> {
     if actor.has_role(Role::PlatformAdmin) || actor.agency_id.as_deref() == Some(agency_id) {
         Ok(())
     } else {
-        Err(AppError::Forbidden)
+        Err(access_denied(actor, "government_read_scope"))
     }
 }
 
-fn verify_csrf(expected: &str, submitted: &str) -> AppResult<()> {
-    if expected.len() == 32 && expected.as_bytes() == submitted.as_bytes() {
-        Ok(())
-    } else {
-        Err(AppError::Forbidden)
-    }
-}
-
-fn cookie(headers: &HeaderMap, name: &str) -> Option<String> {
-    headers
-        .get(header::COOKIE)?
-        .to_str()
-        .ok()?
-        .split(';')
-        .map(str::trim)
-        .find_map(|part| part.strip_prefix(&format!("{name}=")).map(str::to_owned))
+fn access_denied(actor: &ActorContext, reason: &'static str) -> AppError {
+    tracing::warn!(
+        event = "auth.access_denied",
+        component = "auth",
+        operation = "authorization.check",
+        outcome = "rejected",
+        actor_id = %actor.subject_id,
+        reason
+    );
+    AppError::Forbidden
 }
 
 fn non_empty(value: &str) -> Option<&str> {

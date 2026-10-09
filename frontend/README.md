@@ -15,6 +15,14 @@ Requester drafting calls Gemini directly from the browser using a user-supplied 
 
 The submission response contains a requester capability token once. The citizen client displays it and keeps it in same-tab `sessionStorage`; it never places the token in a URL. Replies and appeals send it through the `Authorization` header. Verified accounts replace this capability after MVP.
 
+## Demonstration portals
+
+`login.html` signs in against the Rust `/api/v1/auth/login` endpoint with the public demo accounts listed on that page. The server returns the actor role; the browser uses it to open the citizen or government portal. Portal requests use a server session cookie, `credentials: "include"`, and the current CSRF token. A missing API configuration or failed request shows an error and never creates a local fake result.
+
+`citizen.html` submits FOI requests through the API and loads only that account's requests and public timelines. `government-demo.html` loads the agency board, saves triage, routes eligible cases to units, and posts public replies through authorized API endpoints. The synthetic cases in `../demo/requests.json` can be submitted to a running demo backend with `../demo/seed-requests.ps1`. These cases appear on the DOST board; they are not owned by the seeded citizen account.
+
+The Pages site needs a reachable HTTPS Rust API and the exact Pages origin in `ITANONGMO_FRONTEND_ORIGIN`. Cross-site session cookies may be blocked by browser privacy settings when Pages and the API use unrelated domains; verify login and mutations in the intended browsers before presenting the live demo.
+
 ## Local preview
 
 Set `apiBaseUrl` in `config.js` to the local Rust origin, set the matching `ITANONGMO_FRONTEND_ORIGIN` on the Rust service, and serve this directory with any static-file preview tool. The preview server is development tooling, never part of the backend deployment.

@@ -4,6 +4,7 @@ use sqlx::SqlitePool;
 
 use crate::{
     ai::AiProvider,
+    auth::AuthService,
     error::{AppError, AppResult},
     requester_ai::RequesterAiService,
 };
@@ -21,6 +22,7 @@ pub struct AppConfig {
     pub requester_ai_enabled: bool,
     pub requester_ai_token_ttl_seconds: u64,
     pub demo_reset_on_start: bool,
+    pub enable_persona_login: bool,
 }
 
 impl AppConfig {
@@ -73,6 +75,8 @@ impl AppConfig {
                 .clamp(60, 3_600),
             demo_reset_on_start: env::var("ITANONGMO_DEMO_RESET_ON_START").ok().as_deref()
                 == Some("true"),
+            enable_persona_login: env::var("ITANONGMO_ENABLE_PERSONA_LOGIN").ok().as_deref()
+                == Some("true"),
         })
     }
 }
@@ -99,6 +103,7 @@ fn non_empty_env(name: &str) -> Option<String> {
 pub struct AppState {
     pub pool: SqlitePool,
     pub config: Arc<AppConfig>,
+    pub auth: AuthService,
     pub ai: Option<Arc<dyn AiProvider>>,
     pub requester_ai: RequesterAiService,
 }

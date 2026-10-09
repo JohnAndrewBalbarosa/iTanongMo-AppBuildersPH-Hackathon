@@ -1,0 +1,74 @@
+{
+  "cases": [
+    {
+      "scenario": "Urgent safety review and PHIVOLCS routing",
+      "suggested_unit_id": "dost-phivolcs",
+      "submission": {
+        "agency_ids": "agency-dost",
+        "requester_name": "Demo Citizen One",
+        "requester_email": "citizen-one@example.invalid",
+        "title": "Earthquake monitoring advisories and station summaries",
+        "description": "Please provide public earthquake monitoring advisories and station summary reports for the fictional Bayview district from January to March 2026. This is a synthetic request for the demo.",
+        "purpose": "Community safety planning demonstration",
+        "urgency_details": "The demo scenario concerns an urgent public safety briefing, not a real incident.",
+        "consent": "yes"
+      }
+    },
+    {
+      "scenario": "Financial records and reassignment to FMS",
+      "suggested_unit_id": "dost-fms",
+      "submission": {
+        "agency_ids": "agency-dost",
+        "requester_name": "Demo Citizen Two",
+        "requester_email": "citizen-two@example.invalid",
+        "title": "Research grant disbursement summaries",
+        "description": "Please provide aggregate quarterly disbursement summaries, approved budgets, and public notices of award for fictional research grants issued in 2025. No individual grantee data is requested.",
+        "purpose": "Demonstrate financial records routing",
+        "urgency_details": "",
+        "consent": "yes"
+      }
+    },
+    {
+      "scenario": "Large dataset and PAGASA routing",
+      "suggested_unit_id": "dost-pagasa",
+      "submission": {
+        "agency_ids": "agency-dost",
+        "requester_name": "Demo Citizen Three",
+        "requester_email": "citizen-three@example.invalid",
+        "title": "Monthly weather station data dictionary",
+        "description": "Please provide the public data dictionary and monthly aggregate rainfall tables for all demonstration weather stations for 2024 and 2025, including file formats and coverage notes.",
+        "purpose": "Demonstrate a broad records request",
+        "urgency_details": "",
+        "consent": "yes"
+      }
+    },
+    {
+      "scenario": "Scholarship records and privacy review",
+      "suggested_unit_id": "dost-sei",
+      "submission": {
+        "agency_ids": "agency-dost",
+        "requester_name": "Demo Citizen Four",
+        "requester_email": "citizen-four@example.invalid",
+        "title": "Scholarship program totals by region",
+        "description": "Please provide regional totals and published program guidelines for the fictional 2025 scholarship cycle. Exclude names, addresses, and other personal information.",
+        "purpose": "Demonstrate privacy-aware case handling",
+        "urgency_details": "",
+        "consent": "yes"
+      }
+    },
+    {
+      "scenario": "Multi-agency fan-out to DOST and DA",
+      "suggested_unit_id": "dost-pcaarrd",
+      "submission": {
+        "agency_ids": "agency-dost,agency-da",
+        "requester_name": "Demo Citizen Five",
+        "requester_email": "citizen-five@example.invalid",
+        "title": "Climate-smart agriculture program reports",
+        "description": "Please provide public program guidelines and aggregate accomplishment reports for the fictional climate-smart agriculture pilot across DOST and the Department of Agriculture.",
+        "purpose": "Demonstrate two independently tracked agency cases",
+        "urgency_details": "",
+        "consent": "yes"
+      }
+    }
+  ]
+}
