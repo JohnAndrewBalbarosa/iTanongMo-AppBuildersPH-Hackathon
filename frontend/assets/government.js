@@ -92,6 +92,7 @@ import { MODEL_ID, TRIAGE_POLICY_VERSION } from "../triage/label-map.v1.mjs";
     list.replaceChildren();
     for (const notification of result.data) {
       const item = document.createElement("li");
+      item.setAttribute("data-language-ignore", "");
       item.textContent = `${notification.created_at} — ${notification.message}`;
       list.append(item);
     }

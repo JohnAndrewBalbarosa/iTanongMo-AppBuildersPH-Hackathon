@@ -59,6 +59,7 @@
     visibleAgencies = agencies;
     const options = agencies.map((agency) => {
       const item = document.createElement("option");
+      item.setAttribute("data-language-ignore", "");
       item.value = agency.id;
       item.textContent = `${agency.short_name} — ${agency.name}`;
       item.disabled = selectedAgencies.has(agency.id);

@@ -25,6 +25,7 @@
 
   function appendText(tagName, value) {
     const element = document.createElement(tagName);
+    element.setAttribute("data-language-ignore", "");
     element.textContent = value;
     output.append(element);
   }

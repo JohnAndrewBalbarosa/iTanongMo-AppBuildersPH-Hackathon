@@ -2,6 +2,8 @@
 
 This directory contains the zero-build static citizen and government interfaces. The Rust `itanongmo` binary is a JSON/API-only backend and does not serve these files. The government classifier uses self-hosted browser runtime files under `assets/vendor/`; package versions, licenses, bundle source, and SHA-256 hashes are recorded in `assets/vendor/SOURCES.json`. Rebuild the worker from `triage/worker.mjs` and update the manifest whenever its source or runtime changes.
 
+The sticky header offers a Tagalog/English selector on every page, including both portals. `assets/language.js` translates interface copy without changing user-submitted or server-returned request content. The choice is stored as `itanongmo.language` in browser localStorage when available; English is the fallback. The document `lang` follows the selected language.
+
 ## Required deployment values
 
 1. Give the Rust API an HTTPS origin such as `https://api.example.gov.ph`.

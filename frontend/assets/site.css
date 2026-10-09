@@ -70,6 +70,31 @@ main {
   box-shadow: 0 5px 24px rgb(30 67 82 / 5%);
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.language-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+  font-size: 0.875rem;
+}
+
+.language-picker select {
+  min-height: 2.5rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #9eb2bc;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+}
+
 .main-navigation,
 .footer-navigation,
 .ai-actions {
@@ -415,8 +440,19 @@ dialog::backdrop {
     padding: 0.55rem 1rem;
   }
 
+  .header-actions {
+    display: contents;
+  }
+
+  .language-picker {
+    position: absolute;
+    top: 0.55rem;
+    right: 1rem;
+  }
+
   .main-navigation {
     width: 100%;
+    margin-top: 0.5rem;
     overflow-x: auto;
     flex-wrap: nowrap;
   }

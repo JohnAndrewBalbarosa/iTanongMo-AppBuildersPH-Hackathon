@@ -73,7 +73,9 @@
   }
 
   async function initializeCitizenPortal() {
-    document.querySelector("[data-user-name]").textContent = session.actor.display_name;
+    const userName = document.querySelector("[data-user-name]");
+    userName.setAttribute("data-language-ignore", "");
+    userName.textContent = session.actor.display_name;
     byId("citizen-request-form").addEventListener("submit", submitCitizenRequest);
     byId("citizen-refresh").addEventListener("click", () => loadCitizenRequests().catch(showPageError));
     const agencies = await api("/agencies");
@@ -104,7 +106,7 @@
       button.type = "button";
       if (request.reference === selectedReference) button.setAttribute("aria-current", "true");
       button.append(
-        element("strong", request.title),
+        serverText("strong", request.title),
         element("span", `${request.reference} · ${request.agency.name}`),
         statusBadge(request.status),
       );
@@ -129,9 +131,9 @@
     detail.append(
       element("h3", request.reference),
       statusBadge(request.status),
-      element("h4", request.title),
+      serverText("h4", request.title),
       element("p", `${request.agency.name} · Due ${formatDate(request.due_at)}`),
-      element("p", request.description),
+      serverText("p", request.description),
     );
     const timeline = element("div", "", "case-timeline");
     const updates = [
@@ -210,7 +212,7 @@
         if (request.reference === selectedReference) card.setAttribute("aria-current", "true");
         card.append(
           element("span", request.reference),
-          element("strong", request.title),
+          serverText("strong", request.title),
           element("small", `${request.column} · ${request.unit_name || "Unassigned"}`),
           element("small", `Due ${formatDate(request.due_at)}`),
         );
@@ -249,6 +251,7 @@
     byId("government-case-title").textContent = `${request.reference} — ${request.title}`;
     byId("government-case-meta").textContent =
       `${request.agency_name} · ${request.status.replaceAll("_", " ")} · Due ${formatDate(request.due_at)}`;
+    byId("government-case-description").setAttribute("data-language-ignore", "");
     byId("government-case-description").textContent = request.description;
     const units = byId("triage-unit-demo");
     units.replaceChildren(...caseDetail.units.map((unit) => option(unit.id, unit.name)));
@@ -351,7 +354,7 @@
     const content = element("div");
     content.append(
       element("strong", update.label),
-      element("p", update.detail),
+      serverText("p", update.detail),
       element("small", formatDate(update.time)),
     );
     item.append(element("span", "", "timeline-marker"), content);
@@ -364,6 +367,7 @@
 
   function option(value, label) {
     const item = document.createElement("option");
+    item.setAttribute("data-language-ignore", "");
     item.value = value;
     item.textContent = label;
     return item;
@@ -373,6 +377,12 @@
     const item = document.createElement(tag);
     if (className) item.className = className;
     item.textContent = text;
+    return item;
+  }
+
+  function serverText(tag, value) {
+    const item = element(tag, value);
+    item.setAttribute("data-language-ignore", "");
     return item;
   }
 

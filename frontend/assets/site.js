@@ -76,7 +76,25 @@
         navigationItem("Portal sign in", "login.html", { icon: "key" }),
       );
     }
-    header.replaceChildren(brand, navigation);
+    const languagePicker = document.createElement("label");
+    languagePicker.className = "language-picker";
+    languagePicker.append(document.createElement("span"));
+    languagePicker.firstChild.textContent = "Language";
+    const languageSelect = document.createElement("select");
+    languageSelect.setAttribute("aria-label", "Language");
+    for (const [value, label] of [["fil", "Tagalog"], ["en", "English"]]) {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      languageSelect.append(option);
+    }
+    languageSelect.value = window.iTanongMoLanguage?.current || "en";
+    languageSelect.addEventListener("change", () => window.iTanongMoLanguage?.setLanguage(languageSelect.value));
+    languagePicker.append(languageSelect);
+    const headerActions = document.createElement("div");
+    headerActions.className = "header-actions";
+    headerActions.append(navigation, languagePicker);
+    header.replaceChildren(brand, headerActions);
     if (!header.isConnected) document.body.prepend(header);
   }
 
