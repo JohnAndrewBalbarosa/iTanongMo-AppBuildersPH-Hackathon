@@ -1,7 +1,7 @@
 import { env, pipeline } from "@huggingface/transformers";
 import { MODEL_ID, MODEL_REVISION, TRIAGE_LABELS } from "./label-map.v1.mjs";
 
-env.backends.onnx.wasm.wasmPaths = new URL("./wasm/", import.meta.url).href;
+env.backends.onnx.wasm.wasmPaths = new URL("./onnxruntime/", import.meta.url).href;
 env.allowLocalModels = false;
 
 let classifierPromise;

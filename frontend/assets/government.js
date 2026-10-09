@@ -190,7 +190,7 @@ import { MODEL_ID, TRIAGE_POLICY_VERSION } from "../triage/label-map.v1.mjs";
   }
 
   function classifyInWorker(value) {
-    classifierWorker ??= new Worker(new URL("triage-worker.bundle.js", import.meta.url), { type: "module" });
+    classifierWorker ??= new Worker(new URL("vendor/triage-worker.bundle.js", import.meta.url), { type: "module" });
     const worker = classifierWorker;
     const id = ++classifierSequence;
     return new Promise((resolve, reject) => {

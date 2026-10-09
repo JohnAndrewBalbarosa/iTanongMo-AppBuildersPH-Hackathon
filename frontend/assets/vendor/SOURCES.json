@@ -1,0 +1,36 @@
+{
+  "packages": [
+    {
+      "name": "@huggingface/transformers",
+      "version": "4.3.1",
+      "source": "https://github.com/huggingface/transformers.js/releases/tag/4.3.1",
+      "license": "Apache-2.0",
+      "license_file": "transformers/LICENSE"
+    },
+    {
+      "name": "onnxruntime-web",
+      "version": "1.31.0-dev.20260914-8d85527a0",
+      "source": "https://github.com/microsoft/onnxruntime",
+      "license": "MIT",
+      "license_file": "onnxruntime/LICENSE"
+    }
+  ],
+  "bundle": {
+    "source": "triage/worker.mjs",
+    "tool": "esbuild@0.25.12",
+    "format": "esm",
+    "platform": "browser",
+    "target": "es2022"
+  },
+  "sha256": {
+    "triage-worker.bundle.js": "9d253bb117f6fbbbef0370b3b57af0f1377d0990e3a36160c28bac6656b720f4",
+    "onnxruntime/ort-wasm-simd-threaded.asyncify.mjs": "0966b6105cd936744498aa60df7a22cbd47af3374dbc64a9ab561c08a71e3611",
+    "onnxruntime/ort-wasm-simd-threaded.asyncify.wasm": "49871f5a4409519797e127440868a6d1923339d9185907f301a5b2a1d90af082",
+    "onnxruntime/ort-wasm-simd-threaded.jsep.mjs": "c2f80e915e9df63289788a99d434d8c4e00e64e9c1f030f4b80b022458dd2c99",
+    "onnxruntime/ort-wasm-simd-threaded.jsep.wasm": "62ff86b2f2fa3a79eb87a7e4720e8ea9051942bf975f314181bf7dcef2feac06",
+    "onnxruntime/ort-wasm-simd-threaded.jspi.mjs": "6b37a3974dbd96a752fdc1805e1bdc2dca3ead7e380703c092240c2352c71dbf",
+    "onnxruntime/ort-wasm-simd-threaded.jspi.wasm": "173146c55eb8c7e01f8be3f7b7376fbde14118d91607583ab7caf4feac98e59c",
+    "onnxruntime/ort-wasm-simd-threaded.mjs": "c57ca56328877353a575e51bbca6f18450027d6c9bf2307a2cb2c41363b4de9f",
+    "onnxruntime/ort-wasm-simd-threaded.wasm": "06ba057753da3847e4c24f02d91ab133455b0817c69a44993a9a53a2146df9e3"
+  }
+}
