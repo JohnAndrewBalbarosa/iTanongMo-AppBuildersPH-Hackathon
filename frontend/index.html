@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="fil">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Maghain at subaybayan ang Freedom of Information requests sa mga ahensiya ng Pilipinas.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src https: http://127.0.0.1:* http://localhost:*; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <title>iTanongMo — AppBuildersPH Hackathon</title>
+</head>
+<body>
+  <header>
+    <a href="index.html">iTanongMo</a>
+    <nav aria-label="Main navigation">
+      <a href="request.html">Make a request</a>
+      <a href="track.html">Track a request</a>
+      <a href="about.html">About</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="accessibility.html">Accessibility</a>
+      <a href="#" data-government-link>Government workspace</a>
+    </nav>
+  </header>
+  <main>
+    <p>AppBuildersPH Hackathon edition</p>
+    <h1>Public information, easier to request and manage</h1>
+    <p>Send one FOI submission to one or more government agencies. Each agency receives an independent request, deadline, conversation, disposition, and appeal record.</p>
+    <p><a href="request.html">Start an FOI request</a></p>
+    <section>
+      <h2>How it works</h2>
+      <ol>
+        <li>Describe the records you need.</li>
+        <li>Search and select up to 10 agencies.</li>
+        <li>Review every field and submit.</li>
+        <li>Keep each reference number and track the official response.</li>
+      </ol>
+    </section>
+    <section>
+      <h2>Designed for gradual migration</h2>
+      <p>The existing government workflow can continue while selected agencies move to two-way case management, deterministic triage, a Kanban board, audit history, and optional isolated AI assistance.</p>
+    </section>
+    <section>
+      <h2>Low operating cost</h2>
+      <p>The public frontend consists of static files on GitHub Pages. A compact Rust service and SQLite database run the application backend on a small VPS. This keeps the MVP simple to operate while retaining backups, audit events, health checks, and a path to scale.</p>
+    </section>
+  </main>
+  <footer>
+    <a href="about.html">About</a> · <a href="privacy.html">Privacy</a> · <a href="accessibility.html">Accessibility</a>
+  </footer>
+  <script src="config.js"></script>
+  <script src="assets/site.js"></script>
+</body>
+</html>

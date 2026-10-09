@@ -1,0 +1,51 @@
+name: Deploy citizen frontend to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Configure HTTPS Rust API origin
+        env:
+          API_BASE_URL: ${{ vars.ITANONGMO_API_BASE_URL }}
+        shell: bash
+        run: |
+          if [[ -z "$API_BASE_URL" ]]; then
+            echo "ITANONGMO_API_BASE_URL is unset; deploying with submission and AI disabled."
+          elif [[ "$API_BASE_URL" =~ ^https://[A-Za-z0-9.-]+(:[0-9]+)?$ ]]; then
+            printf 'window.ITANONGMO_CONFIG = Object.freeze({ apiBaseUrl: "%s" });\n' "$API_BASE_URL" > frontend/config.js
+          else
+            echo "Set ITANONGMO_API_BASE_URL to an HTTPS origin without a path." >&2
+            exit 1
+          fi
+      - name: Configure Pages
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
+      - name: Upload static frontend
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0
+        with:
+          path: frontend
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

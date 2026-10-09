@@ -1,0 +1,94 @@
+:root {
+  color-scheme: light;
+  font-family: system-ui, sans-serif;
+  line-height: 1.5;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  color: #172033;
+  background: #f5f7fb;
+}
+
+.site-header, .site-footer, main {
+  width: min(72rem, calc(100% - 2rem));
+  margin-inline: auto;
+}
+
+.site-header {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding-block: 1rem;
+}
+
+.main-navigation, .footer-navigation, .ai-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.navigation-item {
+  border: 1px solid #c8d2e3;
+  border-radius: 0.6rem;
+  background: #fff;
+}
+
+.navigation-item a {
+  display: block;
+  padding: 0.65rem 0.9rem;
+  color: #1547a0;
+  text-decoration: none;
+}
+
+.navigation-item a:hover,
+.navigation-item a:focus-visible,
+.navigation-item a[aria-current="page"] {
+  color: #fff;
+  background: #1547a0;
+  border-radius: inherit;
+}
+
+.navigation-item a[aria-disabled="true"] {
+  color: #5b6472;
+  cursor: not-allowed;
+  background: #edf0f5;
+}
+
+.brand {
+  font-size: 1.15rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+main {
+  min-height: calc(100vh - 13rem);
+  padding-block: 2rem;
+}
+
+section, fieldset, dialog {
+  border: 1px solid #d6deeb;
+  border-radius: 0.75rem;
+  background: #fff;
+  padding: 1rem;
+}
+
+label, input, select, textarea, button { font: inherit; }
+label { display: block; margin-block: 0.75rem; }
+input, select, textarea { width: 100%; max-width: 48rem; padding: 0.65rem; }
+button { padding: 0.65rem 0.9rem; cursor: pointer; }
+
+.site-footer {
+  border-top: 1px solid #d6deeb;
+  padding-block: 1.25rem 2rem;
+}
+
+dialog { width: min(38rem, calc(100% - 2rem)); }
+dialog::backdrop { background: rgb(10 20 40 / 55%); }
+
+@media (max-width: 48rem) {
+  .site-header { align-items: stretch; flex-direction: column; }
+}

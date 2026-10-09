@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fil">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src https: http://127.0.0.1:* http://localhost:*; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <title>Government workspace — iTanongMo</title>
+</head>
+<body>
+  <header><a href="index.html">iTanongMo</a></header>
+  <main>
+    <h1>Government workspace</h1>
+    <p id="government-status" role="status"></p>
+    <section id="persona-section">
+      <h2>Demo persona</h2>
+      <p>Open demonstration identities lamang ito; hindi sila verified government accounts.</p>
+      <label>Persona <select id="persona-list"></select></label>
+      <button type="button" id="select-persona">Open workspace</button>
+    </section>
+    <section id="workspace" hidden>
+      <h2 id="actor-name">Workspace</h2>
+      <p><button type="button" id="refresh-notifications">Refresh notifications</button> <button type="button" id="download-csv">Download CSV report</button></p>
+      <section aria-labelledby="notifications-title">
+        <h3 id="notifications-title">Notifications</h3>
+        <ul id="government-notifications"></ul>
+      </section>
+      <div id="government-board"></div>
+    </section>
+    <section id="government-request" hidden>
+      <h2 id="government-request-title">Request</h2>
+      <pre id="government-request-summary"></pre>
+      <h3>Workflow action</h3>
+      <label>Action <select id="workflow-action"></select></label>
+      <label>Destination unit <select id="workflow-unit"></select></label>
+      <label>Public reason or note <textarea id="workflow-note" maxlength="5000"></textarea></label>
+      <button type="button" id="apply-workflow-action">Apply action</button>
+      <h3>Conversation or internal note</h3>
+      <label>Visibility <select id="message-visibility"><option value="public">Public</option><option value="internal">Internal</option></select></label>
+      <label>Message <textarea id="government-message" maxlength="5000"></textarea></label>
+      <button type="button" id="save-government-message">Save message</button>
+      <h3>Human triage</h3>
+      <label>Categories, comma separated <input id="triage-categories" maxlength="500"></label>
+      <label>Destination unit <select id="triage-unit"></select></label>
+      <button type="button" id="save-triage">Save triage</button>
+      <h3>Government AI draft</h3>
+      <label>Verified facts and record references <textarea id="verified-facts" minlength="20" maxlength="8000"></textarea></label>
+      <button type="button" id="queue-ai-draft">Queue draft</button>
+      <label>Completed draft <select id="ai-draft-list"><option value="">Select a completed draft</option></select></label>
+      <label>Reviewed response <textarea id="ai-reviewed-body" minlength="2" maxlength="5000"></textarea></label>
+      <label><input id="ai-factual-review" type="checkbox"> I verified every factual claim and record reference.</label>
+      <button type="button" id="publish-ai-draft">Publish reviewed response</button>
+      <h3>Release document</h3>
+      <label>Title <input id="document-title" maxlength="180"></label>
+      <label>File <input id="document-file" type="file" accept=".pdf,.json,.csv,.txt"></label>
+      <button type="button" id="release-document">Release document</button>
+      <h3>Case data</h3>
+      <pre id="government-request-data"></pre>
+    </section>
+  </main>
+  <script src="config.js"></script>
+  <script src="assets/site.js"></script>
+  <script src="assets/government.js"></script>
+</body>
+</html>

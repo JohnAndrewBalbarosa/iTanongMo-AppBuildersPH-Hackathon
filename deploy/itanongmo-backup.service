@@ -1,0 +1,8 @@
+[Unit]
+Description=Create a consistent iTanongMo SQLite backup
+
+[Service]
+Type=oneshot
+ExecStart=/opt/itanongmo/deploy/backup.sh
+Nice=10
+IOSchedulingClass=idle

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="fil"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src https: http://127.0.0.1:* http://localhost:*; object-src 'none'; base-uri 'none'; form-action 'self'"><title>Track an FOI request — iTanongMo</title></head>
+<body><header><a href="index.html">iTanongMo</a><nav aria-label="Main navigation"><a href="request.html">Make a request</a> · <a href="track.html" aria-current="page">Track</a> · <a href="about.html">About</a></nav></header>
+<main>
+  <h1>Track an FOI request</h1>
+  <form id="tracking-form">
+    <label>Request reference <input name="reference" required></label>
+    <label>Requester access token <input name="access_token" autocomplete="off" minlength="64" maxlength="64"></label>
+    <button type="submit">View status</button>
+  </form>
+  <p>Makikita ang public status kahit walang token. Kailangan ang token para mag-reply o mag-file ng appeal.</p>
+  <section id="tracking-output" aria-live="polite"></section>
+  <section id="requester-actions" hidden>
+    <h2>Requester actions</h2>
+    <label>Public reply <textarea id="requester-message" minlength="2" maxlength="5000"></textarea></label>
+    <button type="button" id="send-requester-message">Send reply</button>
+    <div id="appeal-controls" hidden>
+      <label>Appeal reason <textarea id="appeal-reason" minlength="2" maxlength="5000"></textarea></label>
+      <button type="button" id="file-appeal">File appeal</button>
+    </div>
+    <p id="requester-action-status" role="status"></p>
+  </section>
+</main>
+<script src="config.js"></script><script src="assets/site.js"></script><script src="assets/track.js"></script></body></html>

@@ -1,0 +1,25 @@
+[Unit]
+Description=iTanongMo FOI service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=itanongmo
+Group=itanongmo
+WorkingDirectory=/opt/itanongmo
+EnvironmentFile=/etc/itanongmo.env
+ExecStart=/opt/itanongmo/bin/itanongmo
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/itanongmo
+MemoryMax=320M
+TasksMax=64
+
+[Install]
+WantedBy=multi-user.target
