@@ -1,6 +1,7 @@
 # GitHub Pages frontend
 
-This directory contains the zero-build citizen and government interfaces. The Rust `itanongmo` binary is a JSON/API-only backend and does not serve these files.
+This directory contains the static citizen and government interfaces. The Rust `itanongmo` binary is a JSON/API-only backend and does not serve these files.
+The government classifier is bundled as a static asset by `npm ci && npm run build:triage` here and by the Pages workflow. Serve the generated `site/` directory. Other pages remain plain HTML, CSS, and JavaScript.
 
 ## Required deployment values
 
@@ -17,4 +18,6 @@ The submission response contains a requester capability token once. The citizen 
 
 ## Local preview
 
-Set `apiBaseUrl` in `config.js` to the local Rust origin, set the matching `ITANONGMO_FRONTEND_ORIGIN` on the Rust service, and serve this directory with any static-file preview tool. The preview server is development tooling, never part of the backend deployment.
+Set `apiBaseUrl` in `config.js` to the local Rust origin, run `npm ci && npm run build:triage`, set the matching `ITANONGMO_FRONTEND_ORIGIN` on the Rust service, and serve `site/` with any static-file preview tool. The preview server is development tooling, never part of the backend deployment.
+
+The local triage pilot uses pinned multilingual MiniLM ONNX with a 107 MB INT8 model download on first use. Browser inference uses WebAssembly/CPU; request text remains in the browser. The label map and preliminary thresholds live in `triage/label-map.v1.mjs`. Reviewers must explicitly copy suggested categories and save through the existing authorized triage endpoint. A model download or inference failure leaves the deterministic rules and manual review available. Filipino/Taglish recall, latency on weak laptops, and threshold calibration require labeled pilot data before operational reliance. A native-phone ExecuTorch companion and LAN pairing are separate future work.

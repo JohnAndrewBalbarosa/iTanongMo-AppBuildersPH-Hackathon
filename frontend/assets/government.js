@@ -1,3 +1,6 @@
+import { reviewableSuggestions, ruleOnlySuggestions } from "../triage/policy.mjs";
+import { MODEL_ID, TRIAGE_POLICY_VERSION } from "../triage/label-map.v1.mjs";
+
 (() => {
   "use strict";
 
@@ -6,6 +9,12 @@
   let csrfToken = "";
   let currentReference = "";
   let currentAiDrafts = [];
+  let currentRequest = null;
+  let currentRuleHits = [];
+  let currentSuggestions = [];
+  let classifierWorker;
+  let classifierSequence = 0;
+  let classifierBusy = false;
 
   async function apiFetch(path, options = {}) {
     if (!apiBaseUrl) throw new Error("Kailangan ang public HTTPS Rust API URL para buksan ang government workspace.");
@@ -105,6 +114,9 @@
     const result = await apiFetch(`/api/v1/government/requests/${encodeURIComponent(reference)}`);
     const data = result.data;
     currentReference = reference;
+    currentRequest = data.request;
+    currentRuleHits = JSON.parse(data.triage?.rule_hits || "[]");
+    currentSuggestions = [];
     rememberSession(data.session);
     byId("government-request").hidden = false;
     byId("government-request-title").textContent = `${reference} — ${data.request.title}`;
@@ -112,6 +124,10 @@
     byId("workflow-action").replaceChildren(...data.actions.map((action) => option(action, action)));
     fillUnitSelect("workflow-unit", data.units);
     fillUnitSelect("triage-unit", data.units);
+    byId("triage-categories").value = JSON.parse(data.triage?.human_categories || "[]").join(", ");
+    byId("triage-model-status").textContent = "Classifier output is advisory. Review before saving triage.";
+    byId("triage-model-scores").replaceChildren();
+    byId("apply-triage-suggestions").disabled = true;
     currentAiDrafts = data.ai_drafts.filter((draft) => draft.status === "completed" && draft.output_hash && draft.output);
     byId("ai-draft-list").replaceChildren(
       option("", "Select a completed draft"),
@@ -137,6 +153,88 @@
     );
     await openRequest(currentReference);
     await loadBoard();
+  }
+
+  // Mental model: infer locally, map scores through a versioned policy, then
+  // let the reviewer explicitly copy suggestions into the existing triage form.
+  async function classifyCurrentRequest() {
+    if (!currentRequest || classifierBusy) return;
+    const reference = currentReference;
+    classifierBusy = true;
+    byId("run-local-triage").disabled = true;
+    byId("triage-model-status").textContent = "Loading local model and classifying. The first download is about 107 MB.";
+    try {
+      const result = await classifyInWorker(triageText(currentRequest));
+      if (reference !== currentReference) return;
+      const recommendation = reviewableSuggestions(result, currentRuleHits);
+      currentSuggestions = recommendation.categories;
+      renderTriageScores(recommendation.rows);
+      byId("triage-model-status").textContent = `${MODEL_ID} · ${TRIAGE_POLICY_VERSION}. Scores are uncalibrated for Filipino/Taglish FOI; review every suggestion.`;
+      byId("apply-triage-suggestions").disabled = currentSuggestions.length === 0;
+    } catch (error) {
+      if (reference !== currentReference) return;
+      currentSuggestions = ruleOnlySuggestions(currentRuleHits);
+      byId("triage-model-scores").replaceChildren();
+      byId("triage-model-status").textContent = `${error.message} Existing rules remain available for review.`;
+      byId("apply-triage-suggestions").disabled = currentSuggestions.length === 0;
+      console.error(JSON.stringify({ event: "triage.browser_inference_failed", component: "government-workspace" }));
+    } finally {
+      classifierBusy = false;
+      byId("run-local-triage").disabled = false;
+    }
+  }
+
+  function triageText(request) {
+    return [request.title, request.description, request.purpose, request.urgency_details]
+      .filter(Boolean).join("\n").slice(0, 4000);
+  }
+
+  function classifyInWorker(value) {
+    classifierWorker ??= new Worker(new URL("triage-worker.bundle.js", import.meta.url), { type: "module" });
+    const worker = classifierWorker;
+    const id = ++classifierSequence;
+    return new Promise((resolve, reject) => {
+      const timeout = window.setTimeout(() => {
+        worker.terminate();
+        if (classifierWorker === worker) classifierWorker = undefined;
+        finish(new Error("Local classifier timed out."));
+      }, 180000);
+      function finish(error, result) {
+        window.clearTimeout(timeout);
+        worker.removeEventListener("message", onMessage);
+        worker.removeEventListener("error", onError);
+        if (error) reject(error);
+        else resolve(result);
+      }
+      function onMessage({ data }) {
+        if (data.id !== id) return;
+        if (data.type === "error") finish(new Error(data.message));
+        else if (data.type === "result") finish(null, data);
+      }
+      function onError() {
+        worker.terminate();
+        if (classifierWorker === worker) classifierWorker = undefined;
+        finish(new Error("Local classifier worker failed."));
+      }
+      worker.addEventListener("message", onMessage);
+      worker.addEventListener("error", onError);
+      worker.postMessage({ type: "classify", id, text: value });
+    });
+  }
+
+  function renderTriageScores(rows) {
+    const list = byId("triage-model-scores");
+    list.replaceChildren();
+    for (const row of rows) {
+      const item = document.createElement("li");
+      item.textContent = `${row.category}: ${(row.score * 100).toFixed(1)}% (pilot threshold ${(row.threshold * 100).toFixed(0)}%)${row.suggested ? " · suggested" : ""}`;
+      list.append(item);
+    }
+  }
+
+  function applyTriageSuggestions() {
+    byId("triage-categories").value = currentSuggestions.join(", ");
+    byId("triage-model-status").textContent = "Suggestions copied to the form. Review and select Save triage to record them.";
   }
 
   async function releaseDocument() {
@@ -200,6 +298,8 @@
     categories: byId("triage-categories").value,
     destination_unit_id: byId("triage-unit").value,
   })));
+  byId("run-local-triage").addEventListener("click", () => run(classifyCurrentRequest));
+  byId("apply-triage-suggestions").addEventListener("click", applyTriageSuggestions);
   byId("queue-ai-draft").addEventListener("click", () => run(() => mutateRequest("/ai-draft", {
     verified_facts: byId("verified-facts").value,
   })));

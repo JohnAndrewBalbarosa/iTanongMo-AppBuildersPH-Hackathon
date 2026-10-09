@@ -1,4 +1,10 @@
 /target/
+/frontend/node_modules/
+/frontend/var/
+/frontend/assets/triage-worker.bundle.js
+/frontend/assets/wasm/
+/frontend/dist/
+/frontend/site/
 /var/
 /.env
 *.db

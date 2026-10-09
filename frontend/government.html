@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src https: http://127.0.0.1:* http://localhost:*; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; connect-src https: http://127.0.0.1:* http://localhost:*; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
   <title>Government workspace — iTanongMo</title>
 </head>
 <body>
@@ -39,6 +39,11 @@
       <label>Message <textarea id="government-message" maxlength="5000"></textarea></label>
       <button type="button" id="save-government-message">Save message</button>
       <h3>Human triage</h3>
+      <p>Local classifier pilot: model scores are advisory and uncalibrated for Filipino/Taglish FOI. Nothing is saved until a reviewer selects Save triage.</p>
+      <button type="button" id="run-local-triage">Run local classifier</button>
+      <p id="triage-model-status" role="status"></p>
+      <ol id="triage-model-scores"></ol>
+      <button type="button" id="apply-triage-suggestions" disabled>Copy suggestions to review form</button>
       <label>Categories, comma separated <input id="triage-categories" maxlength="500"></label>
       <label>Destination unit <select id="triage-unit"></select></label>
       <button type="button" id="save-triage">Save triage</button>
@@ -59,6 +64,6 @@
   </main>
   <script src="config.js"></script>
   <script src="assets/site.js"></script>
-  <script src="assets/government.js"></script>
+  <script type="module" src="assets/government.js"></script>
 </body>
 </html>

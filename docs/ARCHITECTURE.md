@@ -39,9 +39,9 @@ This hybrid follows the useful traits of the PyTorch PH and Agora Artifacts stru
 
 ## Planned local JEB classification runtime
 
-- Use ONNX as the interchange format for the project-owned JEB triage classifier. The government web client should run a validated ONNX export with ONNX Runtime Web. WebAssembly/CPU is the compatibility baseline for weaker laptops and phones; WebGPU or WebNN acceleration is optional after device testing. The model checkpoint, tokenizer, label map, and evaluation results are still required before this becomes a working feature.
+- The government web client pilots a pinned multilingual MiniLM zero-shot ONNX model through Transformers.js and ONNX Runtime Web on WebAssembly/CPU. Its versioned label map and deterministic thresholds turn independent scores into reviewable category suggestions. The model is downloaded on demand and cached in the browser; request text is processed locally. It was not validated on Filipino or Taglish FOI requests, so thresholds are provisional and every suggestion requires human review. A project-owned JEB checkpoint, tokenizer, calibrated thresholds, label map, and evaluation results are still required before replacing the pilot model.
 - Keep classification advisory and subject to authorized human review. A model result must not grant access to another agency's request or publish a response automatically. Server authorization and deterministic triage remain authoritative.
-- A future phone companion could run the same ONNX model locally and return classifications to a paired laptop. Pairing, encrypted transfer, and device revocation need separate implementation and verification. Browser inference does not require a paired phone.
+- A future native phone companion may use ExecuTorch with an export validated for its target backend. Pairing, encrypted LAN transfer, device revocation, and device-specific NPU tests need separate implementation. Browser inference does not require a paired phone.
 
 ### ExecuTorch compatibility finding (checked 2026-10-10)
 

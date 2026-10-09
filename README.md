@@ -1,6 +1,6 @@
 # iTanongMo — AppBuildersPH Hackathon
 
-Production-candidate FOI replacement MVP with public and government interfaces. The zero-build frontend runs on GitHub Pages. The Rust service is a JSON/API-only backend and never serves application HTML.
+Production-candidate FOI replacement MVP with public and government interfaces. The static frontend runs on GitHub Pages; its optional local triage classifier is bundled during deployment. The Rust service is a JSON/API-only backend and never serves application HTML.
 
 This repository is the fresh-history AppBuildersPH Hackathon edition. Runtime behavior and local development state continue from the original iTanongMo workspace.
 
@@ -14,7 +14,7 @@ cargo run
 
 The defaults run locally without environment variables. Use `.env.example` as the list of variables to export in your shell; the binary deliberately does not parse local `.env` files.
 
-Serve `frontend/` with a static-file server and open its URL. Configure its Rust API origin as described in `frontend/README.md`. The Rust root returns API metadata, while `/health` reports readiness. Submit with synthetic data only; seeded government personas are available from `government.html` when the API is configured.
+Run `npm ci` and `npm run build:triage` in `frontend/`, then serve `frontend/site/` with a static-file server and open its URL. Configure its Rust API origin as described in `frontend/README.md`. The Rust root returns API metadata, while `/health` reports readiness. Submit with synthetic data only; seeded government personas are available from `government.html` when the API is configured.
 
 Each submission returns a requester access token once. Save it: public status is readable through the opaque request reference, but citizen replies and appeals require that token. The backend stores only its SHA-256 hash.
 
@@ -28,7 +28,7 @@ cargo test --all-targets --all-features
 
 ## Production shape
 
-Deploy `frontend/` to GitHub Pages with the pinned workflow in `.github/workflows/pages.yml`. Build the Rust API with `cargo build --release`, place the binary under `/opt/itanongmo/bin`, put mutable data under `/var/lib/itanongmo`, configure `/etc/itanongmo.env`, and install the files under `deploy/`. Follow the [deployment runbook](deploy/README.md), terminate TLS at Nginx, and test backup restoration before enabling public traffic.
+Deploy the generated `frontend/site/` to GitHub Pages with the pinned workflow in `.github/workflows/pages.yml`. Build the Rust API with `cargo build --release`, place the binary under `/opt/itanongmo/bin`, put mutable data under `/var/lib/itanongmo`, configure `/etc/itanongmo.env`, and install the files under `deploy/`. Follow the [deployment runbook](deploy/README.md), terminate TLS at Nginx, and test backup restoration before enabling public traffic.
 
 The government-only AI package is separate under `ai-modal/`. It is optional at runtime: deterministic triage and the manual government workflow continue if the private model is unavailable. Qwen3-4B and the Modal/vLLM image are intentionally recorded as **Untested yet use** until the pilot validates output quality, deployment compatibility, and cost.
 
