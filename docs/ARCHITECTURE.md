@@ -37,6 +37,20 @@ This hybrid follows the useful traits of the PyTorch PH and Agora Artifacts stru
 - Every government AI output stores model, prompt version, input/output hashes, and review metadata. Publishing requires a separate authorized human action and a matching output hash.
 - Email transport, identity proofing, eGov integration, and mobile push are post-MVP adapters. The domain workflow remains transport-independent.
 
+## Planned local JEB classification runtime
+
+- Use ONNX as the interchange format for the project-owned JEB triage classifier. The government web client should run a validated ONNX export with ONNX Runtime Web. WebAssembly/CPU is the compatibility baseline for weaker laptops and phones; WebGPU or WebNN acceleration is optional after device testing. The model checkpoint, tokenizer, label map, and evaluation results are still required before this becomes a working feature.
+- Keep classification advisory and subject to authorized human review. A model result must not grant access to another agency's request or publish a response automatically. Server authorization and deterministic triage remain authoritative.
+- A future phone companion could run the same ONNX model locally and return classifications to a paired laptop. Pairing, encrypted transfer, and device revocation need separate implementation and verification. Browser inference does not require a paired phone.
+
+### ExecuTorch compatibility finding (checked 2026-10-10)
+
+ExecuTorch's ready-made LLM export workflow lists supported architectures, but that list is not a whitelist for all models. The general export path can accept other PyTorch models supported by `torch.export` and the target runtime. Backend operator coverage is the constraint: unsupported delegated operations may fall back to portable CPU kernels; an unsupported export or missing runtime kernel requires a compatible graph, custom operator/kernel, or another runtime. A separate `.pte` export may be needed for each hardware backend. A custom BERT-derived JEB classifier therefore needs export and device benchmarks before compatibility or NPU speed can be claimed.
+
+ONNX hardware backends also have operator limits. ONNX Runtime Web documents broad ONNX operator support on WebAssembly but subsets on WebGPU and WebNN. Use WebAssembly as the tested fallback; enable acceleration only after the actual JEB model loads correctly and improves measured latency on target devices. ONNX is the selected path because the government UI runs in a browser and must work on weak laptops, not because it guarantees NPU execution.
+
+Sources: [ExecuTorch ready-made LLM export](https://docs.pytorch.org/executorch/stable/llm/export-llm.html), [ExecuTorch custom export](https://docs.pytorch.org/executorch/stable/llm/export-custom-llm.html), [ExecuTorch runtime kernels](https://docs.pytorch.org/executorch/stable/using-executorch-runtime-integration.html), [ONNX Runtime Web](https://onnxruntime.ai/docs/tutorials/web/), [ONNX Runtime execution providers](https://onnxruntime.ai/docs/execution-providers/).
+
 ## Data and operational limits
 
 - SQLite uses foreign keys and WAL mode. One app instance is the supported MVP topology.
