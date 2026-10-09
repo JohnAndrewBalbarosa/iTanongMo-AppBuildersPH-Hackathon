@@ -14,7 +14,7 @@ src/
   requests/        intake, deadlines, conversation, documents, workflow
   triage/          versioned high-recall deterministic rules
   ai/              government-only private Modal adapter and advisory jobs
-  requester_ai/    stateless BYOK relay and provider-specific adapters
+  requester_ai/    disabled-by-default backend relay for a future managed mode
   board/           government Kanban projections
   notifications/   in-app notification records
   audit/           structured, append-only application audit events
@@ -32,7 +32,7 @@ This hybrid follows the useful traits of the PyTorch PH and Agora Artifacts stru
 - GitHub Pages serves all citizen and government HTML, CSS, JavaScript, and the non-authoritative agency fallback. It contains no provider secret, business decision, or authoritative state.
 - The API allows one configured frontend origin through exact-origin CORS. Requests from GitHub Pages require an HTTPS API origin.
 - The private Modal AI endpoint is government-only. It returns advisory triage and response suggestions and cannot publish, decide, or send.
-- Requester AI uses a separate feature-gated relay. One provider call returns schema-validated JSON for the email body, form fields, and agency queries without changing the manual name or title. A provider token is accepted only in an HTTPS request header, used for that outbound call, and never persisted or logged. Browser memory enforces a short TTL.
+- Requester Gemini BYOK drafting calls Google directly from the browser. The user key stays in tab memory for at most 15 minutes and never reaches the Rust API. The browser validates JSON for the email body, form fields, and agency queries without changing the manual name or title. The existing feature-gated Rust relay is reserved for a future managed mode and remains disabled until authentication, rate limits, quotas, and cost controls are implemented.
 - The requester UI states that the token leaves the computer over HTTPS for the selected provider call. “Local” means ephemeral tab memory and zero application persistence, not offline inference.
 - Every government AI output stores model, prompt version, input/output hashes, and review metadata. Publishing requires a separate authorized human action and a matching output hash.
 - Email transport, identity proofing, eGov integration, and mobile push are post-MVP adapters. The domain workflow remains transport-independent.

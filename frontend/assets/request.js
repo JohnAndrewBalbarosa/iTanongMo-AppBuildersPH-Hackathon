@@ -8,7 +8,6 @@
   const byId = (id) => document.getElementById(id);
   const selectedAgencies = new Map();
   const credentialTtlMilliseconds = 15 * 60 * 1000;
-  let aiConfiguration = { enabled: false, ttlSeconds: 900 };
   let allAgencies = [];
   let temporaryCredential = null;
   let generatedFormValues = null;
@@ -133,10 +132,6 @@
     }
     try {
       const result = await apiFetch("/api/v1/config");
-      aiConfiguration = {
-        enabled: result.data.requester_ai_enabled && window.isSecureContext,
-        ttlSeconds: Math.min(result.data.requester_ai_token_ttl_seconds, 900),
-      };
       renderAgencyMatches(await searchAgencies(""));
     } catch (error) {
       form.querySelector("button[type=submit]").disabled = true;
@@ -160,16 +155,16 @@
 
   function rememberCredential() {
     const value = byId("ai-token").value.trim();
-    if (value.length < 10) throw new Error("Enter a valid provider API token.");
+    if (value.length < 10 || value.length > 512 || /\s/.test(value)) throw new Error("Enter a valid Gemini API key.");
     temporaryCredential = {
       value,
-      expiresAt: Date.now() + Math.min(aiConfiguration.ttlSeconds * 1000, credentialTtlMilliseconds),
+      expiresAt: Date.now() + credentialTtlMilliseconds,
     };
     byId("ai-token").value = "";
     byId("api-key-status").textContent = "API key is ready in this tab for up to 15 minutes.";
     window.setTimeout(() => {
       if (temporaryCredential && Date.now() >= temporaryCredential.expiresAt) forgetCredential();
-    }, Math.min(aiConfiguration.ttlSeconds * 1000, credentialTtlMilliseconds) + 250);
+    }, credentialTtlMilliseconds + 250);
   }
 
   async function pasteCredential() {
@@ -184,31 +179,23 @@
 
   function draftInput() {
     return {
-      provider: byId("ai-provider").value,
-      model: byId("ai-model").value.trim(),
       what_to_ask: byId("ai-details").value.trim(),
       manual_title: form.elements.title.value.trim(),
     };
   }
 
-  async function callAi(path, input, token) {
-    return apiFetch(path, {
-      method: "POST",
-      headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
-      body: JSON.stringify(input),
-    });
-  }
-
   async function generateDraft(event) {
     event.preventDefault();
-    if (!aiConfiguration.enabled) {
-      byId("ai-status").textContent = "AI generation needs a configured HTTPS Rust API with requester AI enabled.";
+    generatedFormValues = null;
+    byId("ai-results").hidden = true;
+    if (!window.isSecureContext) {
+      byId("ai-status").textContent = "Open this page over HTTPS to use Gemini drafting.";
       return;
     }
     try {
       byId("ai-status").textContent = "Generating one strict JSON draft…";
       const token = credential();
-      generatedFormValues = await callAi("/api/v1/requester-ai/draft", draftInput(), token);
+      generatedFormValues = await window.iTanongMoGeminiDraft.generateDraft(token, draftInput());
       byId("ai-email-output").textContent = generatedFormValues.email_body;
       byId("ai-json-output").textContent = JSON.stringify(generatedFormValues, null, 2);
       byId("ai-results").hidden = false;
@@ -312,13 +299,6 @@
   byId("apply-ai-values").addEventListener("click", applyDraft);
   byId("download-ai-json").addEventListener("click", downloadDraftJson);
   byId("add-agency").addEventListener("click", addSelectedAgency);
-  byId("ai-provider").addEventListener("change", (event) => {
-    byId("ai-model").value = {
-      openai: "gpt-4o-mini",
-      anthropic: "claude-sonnet-4-5",
-      gemini: "gemini-2.5-flash",
-    }[event.target.value];
-  });
   byId("agency-search").addEventListener("input", (event) => {
     window.clearTimeout(searchTimer);
     searchTimer = window.setTimeout(async () => {

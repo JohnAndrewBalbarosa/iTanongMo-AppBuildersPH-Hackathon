@@ -10,7 +10,7 @@ Included now:
 - Government personas, agency-scoped Kanban, triage confirmation, routing, internal notes, public replies, document release, CSV export, notifications, and audit events.
 - Deterministic high-recall triage. A flagged request queues AI enrichment; an unflagged request remains visible on the board.
 - Government Modal AI drafting and triage with explicit human review. Government AI output cannot self-publish.
-- Feature-gated requester BYOK drafting makes one provider call and returns strict JSON containing an email body, form values, and agency queries. Name and title remain manual. Tokens remain in tab memory for a bounded TTL and are never persisted; the feature requires HTTPS.
+- Requester Gemini BYOK drafting makes one browser-to-Google call and validates JSON containing an email body, form values, and agency queries. Name and title remain manual. The user key stays in tab memory for at most 15 minutes and is never sent to the Rust backend; the frontend requires HTTPS. The disabled backend relay is reserved for a future managed mode with authentication, rate limits, quotas, and cost controls.
 - Multi-agency intake fans out into independently tracked agency requests under one submission batch.
 - Citizen replies and appeals use a one-time-disclosed batch capability token until verified identity replaces it. The backend stores only the token hash and authorizes every mutation against the request's batch.
 

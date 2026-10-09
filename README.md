@@ -32,7 +32,7 @@ Deploy `frontend/` to GitHub Pages with the pinned workflow in `.github/workflow
 
 The government-only AI package is separate under `ai-modal/`. It is optional at runtime: deterministic triage and the manual government workflow continue if the private model is unavailable. Qwen3-4B and the Modal/vLLM image are intentionally recorded as **Untested yet use** until the pilot validates output quality, deployment compatibility, and cost.
 
-Requester AI is a separate BYOK relay for OpenAI, Anthropic, and Gemini, all currently **Untested yet use**. It makes one provider call and returns strict JSON containing an email body, form values, and agency search queries; requester name and title remain manual. The browser keeps the provider token only in tab memory for a configured TTL; the server forwards it without persistence or logging. This feature MUST remain disabled until HTTPS is active.
+Requester Gemini BYOK drafting runs directly from the HTTPS frontend to Google Gemini. The user-supplied key stays in tab memory for at most 15 minutes; the iTanongMo backend never receives it. The browser validates one JSON draft containing an email body, form values, and agency search queries; requester name and title remain manual. The separate Rust requester-AI relay remains disabled by default for a future server-managed mode, which requires authentication, rate limits, quotas, and cost controls before public enablement.
 
 For loopback-only testing, set `ITANONGMO_REQUESTER_AI_ENABLED=true` and `ITANONGMO_LOCAL_DEVELOPMENT=true`. Never use the local-development override on a public deployment.
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src https: http://127.0.0.1:* http://localhost:*; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src https://generativelanguage.googleapis.com https: http://127.0.0.1:* http://localhost:*; object-src 'none'; base-uri 'none'; form-action 'self'">
   <title>Make an FOI request — iTanongMo</title>
 </head>
 <body>
@@ -60,18 +60,15 @@
     <dialog id="ai-information-dialog" aria-labelledby="ai-information-title">
       <h2 id="ai-information-title">What requester AI does</h2>
       <p>AI returns one strict JSON draft containing an email body, form values, and suggested departments. Your name and request title remain manual and are never replaced. You must verify every fact and selected department before submission.</p>
-      <p>Your provider API key stays only in this browser tab's memory for up to 15 minutes. It is never stored in localStorage, sessionStorage, cookies, the database, or server logs. Closing the tab or selecting “Forget API key” removes the in-memory copy.</p>
-      <p>“Local to this session” does not mean offline. During generation, the key and request details travel over HTTPS through the Rust API relay to the provider you selected. The relay uses them for that request and does not retain them.</p>
+      <p>Your Gemini API key stays only in this browser tab's memory for up to 15 minutes. It is never stored in browser storage or sent to the iTanongMo backend. Closing the tab or selecting “Forget API key” removes the in-memory copy.</p>
+      <p>During generation, your key and draft details go directly from this browser to Google Gemini over HTTPS. This is an online service; review the output before using it.</p>
       <button type="button" id="continue-to-ai">Ask AI</button>
       <button type="button" data-close-dialog="ai-information-dialog">Close</button>
     </dialog>
 
     <dialog id="api-key-dialog" aria-labelledby="api-key-title">
-      <h2 id="api-key-title">Insert provider API key</h2>
+      <h2 id="api-key-title">Insert Gemini API key</h2>
       <p>The key stays only in this tab's memory and expires after 15 minutes. It is never saved in browser storage.</p>
-      <label>Provider
-        <select id="ai-provider"><option value="openai">OpenAI</option><option value="anthropic">Anthropic</option><option value="gemini">Google Gemini</option></select>
-      </label>
       <label>API key <input id="ai-token" type="password" autocomplete="off" spellcheck="false"></label>
       <div class="ai-actions">
         <button type="button" id="paste-ai-token">Paste API key</button>
@@ -85,7 +82,7 @@
     <dialog id="ai-draft-dialog" aria-labelledby="ai-draft-title">
       <h2 id="ai-draft-title">Generate an FOI draft</h2>
       <form id="ai-draft-form">
-        <label>Model <input id="ai-model" value="gpt-4o-mini" required></label>
+        <p>Model: gemini-2.5-flash</p>
         <label>What do you want to ask? <textarea id="ai-details" required minlength="20" maxlength="8000" placeholder="Describe the records you need, relevant dates, offices, and why you need them."></textarea></label>
         <button type="submit">Generate JSON draft</button>
         <button type="button" id="change-ai-token">Insert or change API key</button>
@@ -102,6 +99,7 @@
   </main>
   <script src="config.js"></script>
   <script src="assets/site.js"></script>
+  <script src="assets/gemini-draft.js"></script>
   <script src="assets/request.js"></script>
 </body>
 </html>
