@@ -1,0 +1,25 @@
+.government-ai {
+  display: grid;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  margin-block: 1.5rem;
+  border: 1px solid var(--line, #d7e1e8);
+  border-radius: 16px;
+  min-width: 0;
+}
+.government-ai h3, .government-ai p { margin: 0; }
+.government-ai label { display: grid; gap: .65rem; min-width: 0; }
+.government-ai textarea, .government-ai select { width: 100%; box-sizing: border-box; }
+.government-ai-buttons { display: flex; flex-wrap: wrap; gap: .75rem; }
+.government-ai .government-ai-review { display: flex; align-items: flex-start; gap: .8rem; }
+.government-ai-review input { width: 1.15rem; height: 1.15rem; flex: 0 0 auto; margin-top: .2rem; }
+.government-ai pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  .government-ai { padding: 1rem; }
+  .government-ai-buttons button { flex: 1 1 100%; }
+}
+
+.case-actions { gap: 1.5rem; }
+.case-actions form { display: grid; gap: 1rem; min-width: 0; }
+.case-actions form label { display: grid; gap: .65rem; }
+.case-actions form textarea, .case-actions form select { width: 100%; box-sizing: border-box; }

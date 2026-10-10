@@ -3,6 +3,14 @@
 
   const storageKey = "itanongmo.language";
   const filipino = Object.freeze({
+    "AI response draft": "AI draft ng sagot",
+    "Verified facts": "Na-verify na impormasyon",
+    "Refresh drafts": "I-refresh ang mga draft",
+    "Completed drafts": "Mga natapos na draft",
+    "Review and edit response": "Suriin at i-edit ang sagot",
+    "Sources and limitations": "Mga source at limitasyon",
+    "Publish reviewed response": "I-publish ang nasuring sagot",
+    "AI controls could not load. You can still reply manually.": "Hindi ma-load ang AI controls. Maaari pa ring mag-reply nang manu-mano.",
     "Ask using AI": "Magtanong gamit ang AI",
     "Describe the records you need. AI can prepare a draft for you to review. Enter your request title below first.": "Ilarawan ang mga rekord na kailangan mo. Makagagawa ang AI ng draft na susuriin mo. Ilagay muna ang pamagat ng kahilingan sa ibaba.",
     "What would you like to ask?": "Ano ang gusto mong itanong?",

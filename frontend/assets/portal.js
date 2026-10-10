@@ -8,6 +8,8 @@
   let requests = [];
   let selectedReference = "";
   let caseDetail = null;
+  let governmentDrafting = null;
+  let governmentBoardRevision = 0;
 
   initializePortal();
 
@@ -184,6 +186,13 @@
   }
 
   async function initializeGovernmentPortal() {
+    try {
+      await import("./government-ai.js");
+      governmentDrafting = window.iTanongMoGovernmentAi.initialize(api, session.actor.roles,
+        (reference) => loadGovernmentBoard(reference));
+    } catch (error) {
+      showPageError("AI controls could not load. You can still reply manually.");
+    }
     byId("triage-form").addEventListener("submit", applyTriage);
     byId("government-reply-form").addEventListener("submit", sendGovernmentReply);
     byId("route-case").addEventListener("click", routeCase);
@@ -192,7 +201,9 @@
   }
 
   async function loadGovernmentBoard(preferredReference = selectedReference) {
+    const boardRevision = ++governmentBoardRevision;
     const data = await api("/government/board");
+    if (boardRevision !== governmentBoardRevision) return;
     requests = data.cards;
     selectedReference = requests.some((request) => request.reference === preferredReference)
       ? preferredReference : (requests[0]?.reference || "");
@@ -218,6 +229,7 @@
           element("small", `Due ${formatDate(request.due_at)}`),
         );
         card.addEventListener("click", () => {
+          governmentDrafting?.clear();
           selectedReference = request.reference;
           loadGovernmentBoard(request.reference).catch(showPageError);
         });
@@ -241,13 +253,18 @@
 
   async function renderGovernmentCase() {
     if (!selectedReference) {
+      governmentDrafting?.clear();
       byId("government-case-title").textContent = "No cases assigned to your agency";
       byId("government-case-meta").textContent = "";
       byId("government-case-description").textContent = "";
       byId("government-case-timeline").replaceChildren();
       return;
     }
-    caseDetail = await api(`/government/requests/${encodeURIComponent(selectedReference)}`);
+    const reference = selectedReference;
+    const detail = await api(`/government/requests/${encodeURIComponent(reference)}`);
+    if (reference !== selectedReference) return;
+    caseDetail = detail;
+    governmentDrafting?.setCase(reference, detail);
     const request = caseDetail.request;
     byId("government-case-title").textContent = `${request.reference} — ${request.title}`;
     byId("government-case-meta").textContent =
