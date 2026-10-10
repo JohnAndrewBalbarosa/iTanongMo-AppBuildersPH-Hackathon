@@ -16,8 +16,8 @@ pub struct AppConfig {
     pub data_dir: PathBuf,
     pub public_origin: String,
     pub frontend_origin: Option<String>,
-    pub ai_base_url: Option<String>,
-    pub ai_proxy_token: Option<String>,
+    pub ai_chat_completions_url: Option<String>,
+    pub ai_api_key: Option<String>,
     pub ai_model: String,
     pub requester_ai_enabled: bool,
     pub guest_ai_enabled: bool,
@@ -71,9 +71,11 @@ impl AppConfig {
             data_dir,
             public_origin,
             frontend_origin,
-            ai_base_url: non_empty_env("ITANONGMO_AI_BASE_URL"),
-            ai_proxy_token: non_empty_env("ITANONGMO_AI_PROXY_TOKEN"),
-            ai_model: env::var("ITANONGMO_AI_MODEL").unwrap_or_else(|_| "Qwen/Qwen3-4B".into()),
+            ai_chat_completions_url: configured_ai_chat_completions_url(),
+            ai_api_key: non_empty_env("ITANONGMO_AI_API_KEY")
+                .or_else(|| non_empty_env("ITANONGMO_AI_PROXY_TOKEN")),
+            ai_model: env::var("ITANONGMO_AI_MODEL")
+                .unwrap_or_else(|_| "gemini-2.5-flash-lite".into()),
             requester_ai_enabled,
             guest_ai_enabled,
             demo_reset_on_start: env::var("ITANONGMO_DEMO_RESET_ON_START").ok().as_deref()
@@ -82,6 +84,15 @@ impl AppConfig {
                 == Some("true"),
         })
     }
+}
+
+fn configured_ai_chat_completions_url() -> Option<String> {
+    non_empty_env("ITANONGMO_AI_CHAT_COMPLETIONS_URL")
+        .map(|url| url.trim_end_matches('/').to_owned())
+        .or_else(|| {
+            non_empty_env("ITANONGMO_AI_BASE_URL")
+                .map(|base_url| format!("{}/v1/chat/completions", base_url.trim_end_matches('/')))
+        })
 }
 
 fn validate_frontend_origin(origin: &str) -> AppResult<()> {

@@ -9,7 +9,7 @@ Included now:
 - Public timeline, released documents, two-way in-app thread, working-day due dates, extension, disposition, and appeal.
 - Government personas, agency-scoped Kanban, triage confirmation, routing, internal notes, public replies, document release, CSV export, notifications, and audit events.
 - Deterministic high-recall triage. A flagged request queues AI enrichment; an unflagged request remains visible on the board.
-- Government Modal AI drafting and triage with explicit human review. Government AI output cannot self-publish.
+- Government AI drafting and triage through the shared OpenAI-compatible provider with explicit human review. AI output cannot self-publish.
 - Citizen AI drafting uses the shared server-owned backend provider. The citizen signs in and sends a CSRF-protected request; no user API key or provider selection is accepted. AI output is schema-validated, previewed, and applied only on explicit user action. Identity, title, agency selection, consent, and submission remain under citizen control. Limits per API process: 5 attempts/user/minute, 60 attempts/hour total, 2 concurrent calls, 45-second timeout, and 2,048 output tokens. Restarting the process resets in-memory limits; multiple replicas need a shared limiter or upstream budget enforcement.
 - Multi-agency intake fans out into independently tracked agency requests under one submission batch.
 - Guest users track public status by FOI reference only and cannot reply or appeal. Authenticated citizen accounts authorize reply and appeal mutations through their server-side session.

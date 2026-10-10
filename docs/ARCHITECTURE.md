@@ -13,7 +13,7 @@ src/
   organization/    agency directory, DOST hierarchy, routing targets
   requests/        intake, deadlines, conversation, documents, workflow
   triage/          versioned high-recall deterministic rules
-  ai/              shared private Modal adapter and government advisory jobs
+  ai/              shared OpenAI-compatible adapter and government advisory jobs
   requester_ai/    authenticated shared-provider citizen drafting and bounded usage controls
   board/           government Kanban projections
   notifications/   in-app notification records
@@ -31,7 +31,7 @@ This hybrid follows the useful traits of the PyTorch PH and Agora Artifacts stru
 - The Rust process is the only application backend. It owns JSON APIs, validation, authorization, SQLite, audit records, and deterministic decisions. It does not serve application HTML.
 - GitHub Pages serves all citizen and government HTML, CSS, JavaScript, and the non-authoritative agency fallback. It contains no provider secret, business decision, or authoritative state.
 - The API allows one configured frontend origin through exact-origin CORS. Requests from GitHub Pages require an HTTPS API origin.
-- The private Modal AI endpoint serves citizen request drafts and government advisory triage/response suggestions. It cannot publish, decide, or send.
+- A server-owned OpenAI-compatible endpoint serves citizen request drafts and government advisory triage/response suggestions. Gemini 2.5 Flash-Lite is the documented low-cost default; the private Modal/Qwen package remains an alternative. Provider output cannot publish, decide, or send.
 - Citizen AI drafting uses the shared server-owned backend provider. The citizen signs in and sends a CSRF-protected request; no user API key or provider selection is accepted. AI output is schema-validated, previewed, and applied only on explicit user action. Identity, title, agency selection, consent, and submission remain under citizen control. Limits per API process: 5 attempts/user/minute, 60 attempts/hour total, 2 concurrent calls, 45-second timeout, and 2,048 output tokens. Restarting the process resets in-memory limits; multiple replicas need a shared limiter or upstream budget enforcement.
 - Citizen drafting sends only the manual title and request instructions through the authenticated backend to its configured model service; provider credentials remain server-owned. Prompts and draft contents are not persisted by the drafting service.
 - Every government AI output stores model, prompt version, input/output hashes, and review metadata. Publishing requires a separate authorized human action and a matching output hash.

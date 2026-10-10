@@ -7,7 +7,7 @@
 //!   requests       FOI intake, conversations, deadlines, and legal state machine
 //!   board          government Kanban projections
 //!   triage         high-recall deterministic rules and human review
-//!   ai             provider-neutral AI jobs and private Modal adapter
+//!   ai             provider-neutral AI jobs and OpenAI-compatible adapter
 //!   notifications  in-app notification feed and future delivery boundary
 //!   audit          immutable, redacted activity records
 

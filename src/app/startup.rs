@@ -8,7 +8,7 @@ use sqlx::{
 use tokio::net::TcpListener;
 
 use crate::{
-    ai::{self, ModalAiProvider},
+    ai::{self, OpenAiCompatibleProvider},
     auth::{AuthService, seed_demo_auth},
     error::AppResult,
     organization,
@@ -38,17 +38,19 @@ pub async fn start() -> AppResult<RunningApp> {
     }
     organization::seed_reference_data(&pool).await?;
     seed_demo_auth(&pool).await?;
-    let ai = match (&config.ai_base_url, &config.ai_proxy_token) {
-        (Some(base_url), Some(token)) => Some(Arc::new(ModalAiProvider::new(
-            base_url.clone(),
-            token.clone(),
-            config.ai_model.clone(),
-        )?) as Arc<dyn ai::AiProvider>),
+    let ai = match (&config.ai_chat_completions_url, &config.ai_api_key) {
+        (Some(chat_completions_url), Some(api_key)) => {
+            Some(Arc::new(OpenAiCompatibleProvider::new(
+                chat_completions_url.clone(),
+                api_key.clone(),
+                config.ai_model.clone(),
+            )?) as Arc<dyn ai::AiProvider>)
+        }
         _ => {
             tracing::warn!(
                 event = "ai.configuration_missing",
                 outcome = "degraded",
-                "AI jobs will remain pending until a private endpoint is configured"
+                "AI jobs will remain pending until an HTTPS provider endpoint and API key are configured"
             );
             None
         }
