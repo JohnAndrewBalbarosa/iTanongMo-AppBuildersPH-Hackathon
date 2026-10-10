@@ -304,6 +304,15 @@ dialog {
   box-shadow: var(--shadow);
 }
 
+[hidden] {
+  display: none !important;
+}
+
+.guest-request-page #submission-output {
+  display: block;
+  width: 100%;
+}
+
 section {
   position: relative;
   margin-top: 1.25rem;

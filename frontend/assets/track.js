@@ -8,10 +8,6 @@
   const actionStatus = document.querySelector("#requester-action-status");
   let currentRequest = null;
 
-  function accessStorageKey(reference) {
-    return `itanongmo.requester-access.${reference}`;
-  }
-
   function accessToken() {
     return form.elements.access_token.value.trim();
   }
@@ -50,7 +46,6 @@
   async function load(reference) {
     const request = (await apiFetch(`/api/v1/requests/${encodeURIComponent(reference)}`)).data;
     currentRequest = request;
-    if (accessToken()) sessionStorage.setItem(accessStorageKey(reference), accessToken());
     renderRequest(request);
   }
 
@@ -62,7 +57,6 @@
       headers: { "authorization": `Bearer ${accessToken()}`, "content-type": "application/json" },
       body: JSON.stringify(body),
     });
-    sessionStorage.setItem(accessStorageKey(currentRequest.reference), accessToken());
     await load(currentRequest.reference);
     actionStatus.textContent = "Saved.";
   }
@@ -71,8 +65,6 @@
     event.preventDefault();
     const reference = form.elements.reference.value.trim();
     try {
-      const savedToken = sessionStorage.getItem(accessStorageKey(reference));
-      if (!accessToken() && savedToken) form.elements.access_token.value = savedToken;
       await load(reference);
     } catch (error) {
       output.textContent = error.message;
@@ -90,7 +82,6 @@
   const reference = new URLSearchParams(window.location.search).get("reference");
   if (reference) {
     form.elements.reference.value = reference;
-    form.elements.access_token.value = sessionStorage.getItem(accessStorageKey(reference)) || "";
     load(reference).catch((error) => { output.textContent = error.message; });
   }
 })();
