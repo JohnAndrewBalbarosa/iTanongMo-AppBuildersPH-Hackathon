@@ -13,11 +13,29 @@
     <div class="portal-heading">
       <div>
         <p class="eyebrow">Government portal</p>
-        <h1>Information request workspace</h1>
-        <p>Review incoming cases, apply consistent triage, and keep citizens informed.</p>
+        <h1 data-local-copy="workspaceTitle">Local AI triage workspace</h1>
+        <p data-local-copy="workspaceIntro">Classify incoming requests on this computer, review the priorities, then save triage and respond.</p>
       </div>
       <button type="button" id="portal-logout" class="portal-switch-link">Sign out</button>
     </div>
+
+    <section id="local-triage" class="portal-panel local-model-panel local-triage-spotlight" aria-labelledby="local-model-title">
+      <p class="eyebrow" data-local-copy="eyebrow">Local AI triage</p>
+      <h2 id="local-model-title" data-local-copy="title">Classify, review, decide</h2>
+      <p class="local-triage-lead" data-local-copy="lead">Turn request text into suggested priorities with the local model. Your review controls the final triage.</p>
+      <ol class="local-triage-steps"><li data-local-copy="stepSelect">1. Select a request below</li><li data-local-copy="stepClassify">2. Classify locally</li><li data-local-copy="stepReview">3. Review and save triage</li></ol>
+      <details class="local-model-setup"><summary data-local-copy="setupTitle">First-time setup</summary>
+      <p data-local-copy="setup">Download the Windows EXE and open it once. It downloads the model on first launch, then starts a service on this computer. Keep the EXE open while reviewing requests. Later launches use the saved model; Python and an API key are not needed.</p>
+        <a data-local-copy="download" href="https://github.com/JohnAndrewBalbarosa/iTanongMo-AppBuildersPH-Hackathon/releases/download/local-model-pilot-v0.1.0/iTanongMoLocalModel.exe">Download Windows EXE</a>
+      </details>
+      <p data-local-copy="review">The browser may ask for local-network permission. Select a case, then run the classifier. Scores are advisory and are never saved or routed automatically.</p>
+      <div class="local-model-actions">
+        <button type="button" id="classify-local-case" class="portal-primary-action" data-local-copy="classify">Classify selected case</button>
+        <button type="button" id="check-local-model" data-local-copy="check">Check connection</button>
+      </div>
+      <p id="local-model-status" class="form-status" role="status" data-local-copy="initial">Open the EXE to connect the local model.</p>
+      <ul id="local-model-scores" class="local-model-scores" aria-label="Local classifier scores"></ul>
+    </section>
 
     <section class="portal-stat-grid" aria-label="Case summary">
       <article><strong id="government-new">0</strong><span>New cases</span></article>
@@ -34,20 +52,6 @@
         <button type="button" id="government-refresh">Refresh</button>
       </div>
       <div id="government-board-demo" class="kanban-board"></div>
-    </section>
-
-    <section class="portal-panel local-model-panel" aria-labelledby="local-model-title">
-      <p class="eyebrow" data-local-copy="eyebrow">Optional local review</p>
-      <h2 id="local-model-title" data-local-copy="title">Run the local classifier</h2>
-      <p data-local-copy="setup">Download the Windows EXE and open it once. It downloads the model on first launch, then starts a service on this computer. Keep the EXE open while reviewing requests. Later launches use the saved model; Python and an API key are not needed.</p>
-      <p data-local-copy="review">The browser may ask for local-network permission. Select a case, then run the classifier. Scores are advisory and are never saved or routed automatically.</p>
-      <div class="local-model-actions">
-        <a data-local-copy="download" href="https://github.com/JohnAndrewBalbarosa/iTanongMo-AppBuildersPH-Hackathon/releases/download/local-model-pilot-v0.1.0/iTanongMoLocalModel.exe">Download Windows EXE</a>
-        <button type="button" id="check-local-model" data-local-copy="check">Check connection</button>
-        <button type="button" id="classify-local-case" data-local-copy="classify">Classify selected case</button>
-      </div>
-      <p id="local-model-status" class="form-status" role="status" data-local-copy="initial">Open the EXE to connect the local model.</p>
-      <ul id="local-model-scores" class="local-model-scores" aria-label="Local classifier scores"></ul>
     </section>
 
     <section id="government-case-panel" class="portal-panel case-workbench" aria-labelledby="government-case-title">

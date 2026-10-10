@@ -19,8 +19,15 @@
     records_preservation: "Pag-iingat ng rekord", clarification: "Kailangang linawin",
   });
   const copy = Object.freeze({
-    eyebrow: ["Optional local review", "Opsiyonal na lokal na pagsusuri"],
-    title: ["Run the local classifier", "Patakbuhin ang lokal na classifier"],
+    workspaceTitle: ["Local AI triage workspace", "Workspace para sa local AI triage"],
+    workspaceIntro: ["Classify incoming requests on this computer, review the priorities, then save triage and respond.", "I-classify sa computer na ito ang mga kahilingan, suriin ang priority, saka i-save ang triage at sumagot."],
+    eyebrow: ["Local AI triage", "Local AI triage"],
+    title: ["Classify, review, decide", "I-classify, suriin, magpasya"],
+    lead: ["Turn request text into suggested priorities with the local model. Your review controls the final triage.", "Gamitin ang local model para magmungkahi ng priority mula sa kahilingan. Ikaw ang magpapasya sa final triage."],
+    stepSelect: ["1. Select a request below", "1. Pumili ng kahilingan sa ibaba"],
+    stepClassify: ["2. Classify locally", "2. I-classify gamit ang local model"],
+    stepReview: ["3. Review and save triage", "3. Suriin at i-save ang triage"],
+    setupTitle: ["First-time setup", "Setup sa unang paggamit"],
     setup: [
       "Download the Windows EXE and open it once. It downloads the model on first launch, then starts a service on this computer. Keep the EXE open while reviewing requests. Later launches use the saved model; Python and an API key are not needed.",
       "I-download ang Windows EXE at buksan ito nang isang beses. Ida-download nito ang model sa unang bukas, saka sisimulan ang service sa computer na ito. Panatilihing bukas ang EXE habang sinusuri ang mga kahilingan. Sa susunod, gagamitin ang naka-save na model; hindi kailangan ang Python o API key.",

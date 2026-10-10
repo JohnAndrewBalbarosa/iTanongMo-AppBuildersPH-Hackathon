@@ -112,3 +112,30 @@ main.portal-dashboard .citizen-workspace {
     grid-template-columns: 1fr;
   }
 }
+
+.government-portal .local-triage-spotlight {
+  border: 2px solid var(--brand);
+  padding: clamp(1.25rem, 3vw, 2rem);
+}
+.local-triage-lead { max-width: 65ch; }
+.local-triage-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  padding: 0;
+  list-style: none;
+  margin-block: 1.5rem;
+}
+.local-triage-steps li {
+  border: 1px solid var(--line);
+  border-radius: .5rem;
+  padding: 1rem;
+  font-weight: 700;
+}
+.local-model-setup { margin-block: 1.25rem; }
+.local-model-setup summary { cursor: pointer; font-weight: 700; }
+.local-triage-spotlight .local-model-actions { margin-block: 1.25rem; }
+@media (max-width: 40rem) {
+  .local-triage-steps { grid-template-columns: 1fr; }
+  .local-triage-spotlight .local-model-actions button { width: 100%; }
+}

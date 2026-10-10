@@ -1,0 +1,261 @@
+{
+  "schema_version": "synthetic-triage-cases/v1",
+  "provenance": "Assistant-authored synthetic FOI examples; labels not independently verified",
+  "label_verification": "unverified",
+  "threshold": 0.5,
+  "threshold_selection": "Predeclared baseline, not calibrated or optimized on this dataset",
+  "cases": [
+    {
+      "id": "time_sensitive-en",
+      "language": "en",
+      "text": "Please send the records before the urgent deadline tomorrow.",
+      "labels": [
+        "time_sensitive"
+      ]
+    },
+    {
+      "id": "time_sensitive-fil",
+      "language": "fil",
+      "text": "Kailangan ko ang records bago ang agarang deadline bukas.",
+      "labels": [
+        "time_sensitive"
+      ]
+    },
+    {
+      "id": "time_sensitive-taglish",
+      "language": "taglish",
+      "text": "Urgent po, kailangan ang report before the deadline tomorrow.",
+      "labels": [
+        "time_sensitive"
+      ]
+    },
+    {
+      "id": "safety_review-en",
+      "language": "en",
+      "text": "There is an immediate threat to public safety from an unsafe bridge.",
+      "labels": [
+        "safety_review"
+      ]
+    },
+    {
+      "id": "safety_review-fil",
+      "language": "fil",
+      "text": "May agarang panganib sa kaligtasan dahil sa sirang tulay.",
+      "labels": [
+        "safety_review"
+      ]
+    },
+    {
+      "id": "safety_review-taglish",
+      "language": "taglish",
+      "text": "Public safety concern po: delikado ang bridge at may threat sa mga tao.",
+      "labels": [
+        "safety_review"
+      ]
+    },
+    {
+      "id": "sensitive_data-en",
+      "language": "en",
+      "text": "Please provide confidential medical records and personal home addresses.",
+      "labels": [
+        "sensitive_data"
+      ]
+    },
+    {
+      "id": "sensitive_data-fil",
+      "language": "fil",
+      "text": "Humihingi ako ng kumpidensyal na medical records at personal na tirahan.",
+      "labels": [
+        "sensitive_data"
+      ]
+    },
+    {
+      "id": "sensitive_data-taglish",
+      "language": "taglish",
+      "text": "Need ko ang private medical files at personal addresses ng beneficiaries.",
+      "labels": [
+        "sensitive_data"
+      ]
+    },
+    {
+      "id": "voluminous-en",
+      "language": "en",
+      "text": "Please provide all records from the last thirty years, totaling thousands of pages.",
+      "labels": [
+        "voluminous"
+      ]
+    },
+    {
+      "id": "voluminous-fil",
+      "language": "fil",
+      "text": "Pakibigay ang lahat ng rekord sa tatlumpung taon na may libu-libong pahina.",
+      "labels": [
+        "voluminous"
+      ]
+    },
+    {
+      "id": "voluminous-taglish",
+      "language": "taglish",
+      "text": "All files po for thirty years, thousands of pages ang request.",
+      "labels": [
+        "voluminous"
+      ]
+    },
+    {
+      "id": "multi_unit-en",
+      "language": "en",
+      "text": "This request needs records from several government agencies and departments.",
+      "labels": [
+        "multi_unit"
+      ]
+    },
+    {
+      "id": "multi_unit-fil",
+      "language": "fil",
+      "text": "Kailangan ang rekord mula sa maraming ahensiya at kagawaran ng gobyerno.",
+      "labels": [
+        "multi_unit"
+      ]
+    },
+    {
+      "id": "multi_unit-taglish",
+      "language": "taglish",
+      "text": "Multiple agencies po ang involved at kailangan ang files ng bawat department.",
+      "labels": [
+        "multi_unit"
+      ]
+    },
+    {
+      "id": "appeal-en",
+      "language": "en",
+      "text": "I appeal the denial of my information request and ask for reconsideration.",
+      "labels": [
+        "appeal"
+      ]
+    },
+    {
+      "id": "appeal-fil",
+      "language": "fil",
+      "text": "Inaapela ko ang pagtanggi sa aking kahilingan at humihingi ng muling pagsusuri.",
+      "labels": [
+        "appeal"
+      ]
+    },
+    {
+      "id": "appeal-taglish",
+      "language": "taglish",
+      "text": "Denied ang FOI request ko; I want to appeal and request reconsideration.",
+      "labels": [
+        "appeal"
+      ]
+    },
+    {
+      "id": "records_preservation-en",
+      "language": "en",
+      "text": "Please preserve these records and prevent their deletion or destruction.",
+      "labels": [
+        "records_preservation"
+      ]
+    },
+    {
+      "id": "records_preservation-fil",
+      "language": "fil",
+      "text": "Pakipangalagaan ang mga rekord at pigilan ang pagbura o pagsira sa mga ito.",
+      "labels": [
+        "records_preservation"
+      ]
+    },
+    {
+      "id": "records_preservation-taglish",
+      "language": "taglish",
+      "text": "Preserve po ang files; huwag i-delete o sirain habang may request.",
+      "labels": [
+        "records_preservation"
+      ]
+    },
+    {
+      "id": "clarification-en",
+      "language": "en",
+      "text": "I want some information about something, but I cannot specify which records.",
+      "labels": [
+        "clarification"
+      ]
+    },
+    {
+      "id": "clarification-fil",
+      "language": "fil",
+      "text": "May gusto akong malaman pero hindi malinaw kung anong mga rekord ang kailangan.",
+      "labels": [
+        "clarification"
+      ]
+    },
+    {
+      "id": "clarification-taglish",
+      "language": "taglish",
+      "text": "Need ko ng info tungkol sa something, hindi ko alam which specific records.",
+      "labels": [
+        "clarification"
+      ]
+    },
+    {
+      "id": "negative-en",
+      "language": "en",
+      "text": "Please provide the published annual scholarship statistics for 2025.",
+      "labels": []
+    },
+    {
+      "id": "negative-fil",
+      "language": "fil",
+      "text": "Pakibigay ang nailathalang taunang bilang ng scholarship para sa 2025.",
+      "labels": []
+    },
+    {
+      "id": "negative-taglish",
+      "language": "taglish",
+      "text": "Request ko ang published annual scholarship statistics for 2025.",
+      "labels": []
+    },
+    {
+      "id": "negative-specific",
+      "language": "en",
+      "text": "Please provide the public list of regional science offices and opening hours.",
+      "labels": []
+    },
+    {
+      "id": "multi-urgent-private",
+      "language": "taglish",
+      "text": "Urgent deadline bukas: need ang confidential medical records at personal addresses.",
+      "labels": [
+        "time_sensitive",
+        "sensitive_data"
+      ]
+    },
+    {
+      "id": "multi-appeal-preserve",
+      "language": "fil",
+      "text": "Inaapela ko ang pagtanggi. Pakipangalagaan ang rekord at pigilan ang pagbura nito.",
+      "labels": [
+        "appeal",
+        "records_preservation"
+      ]
+    },
+    {
+      "id": "multi-volume-agencies",
+      "language": "en",
+      "text": "Provide thirty years of records, thousands of pages from multiple government agencies.",
+      "labels": [
+        "voluminous",
+        "multi_unit"
+      ]
+    },
+    {
+      "id": "multi-danger-urgent",
+      "language": "taglish",
+      "text": "Urgent deadline tomorrow: may unsafe bridge at immediate threat sa public safety.",
+      "labels": [
+        "time_sensitive",
+        "safety_review"
+      ]
+    }
+  ]
+}
