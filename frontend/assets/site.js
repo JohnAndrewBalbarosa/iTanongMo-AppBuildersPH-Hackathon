@@ -60,6 +60,8 @@
     navigation.setAttribute("aria-label", "Main navigation");
     const authItem = navigationItem("Sign in", "login.html", { current: currentPage === "login.html", icon: "key" });
     navigation.append(
+      navigationItem("Make a request", "request.html", { current: currentPage === "request.html", icon: "request" }),
+      navigationItem("Track a request", "track.html", { current: currentPage === "track.html", icon: "track" }),
       navigationItem("About", "about.html", { current: currentPage === "about.html", icon: "about" }),
       authItem,
     );

@@ -60,9 +60,10 @@ async function page(fetch) {
   return { actions, footer, destinations, status: header.children[1].children[1] };
 }
 
-test("header shows only About and Sign in without a backend session", async () => {
+test("header keeps guest request and tracking links without a backend session", async () => {
   const { actions, footer } = await page(async () => ({ ok: false, status: 401 }));
-  assert.deepEqual(actions.map((action) => action.textContent), ["About", "Sign in"]);
+  assert.deepEqual(actions.map((action) => action.textContent), ["Make a request", "Track a request", "About", "Sign in"]);
+  assert.deepEqual(actions.slice(0, 2).map((action) => action.href), ["request.html", "track.html"]);
   assert.equal(footer.children[1].tagName, "label");
 });
 
@@ -80,8 +81,8 @@ test("valid backend session shows Sign out and logout uses a fresh CSRF token", 
     }
     return { ok: true };
   });
-  assert.equal(actions[1].textContent, "Sign out");
-  await actions[1].click({ preventDefault() {} });
+  assert.equal(actions[3].textContent, "Sign out");
+  await actions[3].click({ preventDefault() {} });
   assert.equal(requests[0].options.credentials, "include");
   assert.equal(requests[2].options.credentials, "include");
   assert.equal(requests[2].options.headers["X-CSRF-Token"], "token-2");
@@ -92,8 +93,8 @@ test("failed logout leaves the session action available and reports the error", 
   const { actions, destinations, status } = await page(async (url) => url.endsWith("/auth/session")
     ? { ok: true, json: async () => ({ data: { actor: {}, csrf_token: "token" } }) }
     : { ok: false, status: 403 });
-  await actions[1].click({ preventDefault() {} });
-  assert.equal(actions[1].textContent, "Sign out");
+  await actions[3].click({ preventDefault() {} });
+  assert.equal(actions[3].textContent, "Sign out");
   assert.equal(status.textContent, "Sign out failed. Please try again.");
   assert.deepEqual(destinations, []);
 });
