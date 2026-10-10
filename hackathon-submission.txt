@@ -1,0 +1,35 @@
+iTanongMo — AppBuildersPH Hackathon Submission Draft
+
+THE PROJECT
+Project name: iTanongMo
+Short description: A Filipino Freedom of Information request and agency workflow platform with human-reviewed AI assistance.
+Team name: Balby
+Team members: John Andrew Balbarosa
+GitHub repository: https://github.com/JohnAndrewBalbarosa/iTanongMo-AppBuildersPH-Hackathon
+Hardware tested on: Windows computer with Chrome for the recorded frontend showcase. Exact device specifications and phone or NPU benchmarks are not documented.
+
+Project description:
+iTanongMo helps Filipino citizens submit Freedom of Information requests to multiple agencies, track each request, receive public responses and documents, and file appeals. Government personnel use an agency-scoped board to review, route, and respond to requests with audit trails and deadline tracking. Deterministic rules flag requests for review, while optional AI tools provide draft assistance that a person must check and approve. A browser-based local classifier pilot processes request text on the reviewer's device; its suggestions are advisory and are not yet calibrated for Filipino or Taglish FOI requests.
+
+THE PROOF
+Demo video: [Add a direct public video URL after publishing. The current local showcase is 90 seconds, has no voice recording, and uses synthetic fixture data rather than live government transactions.]
+Local video file: demo/showcase/output/itanongmo-showcase.mp4
+Screenshots: [Add direct public screenshot URLs after publishing.]
+Local poster: demo/showcase/output/poster.jpg
+Local storyboard: demo/showcase/output/storyboard.jpg
+X / LinkedIn video URL: [Add the actual X or LinkedIn post URL. The GitHub repository URL is not a video post.]
+
+THE DISCLOSURES
+Models used: The optional browser-based triage pilot uses pinned multilingual MiniLM zero-shot ONNX through Transformers.js and ONNX Runtime Web. A separate CPU-only mDeBERTa experiment is not connected to the Rust service. Requester drafting uses Google Gemini 2.5 Flash with the requester's own API key. Government-only Qwen3-4B through Modal/vLLM is an optional integration and remains unvalidated for pilot use. A project-trained JEB checkpoint, Filipino/Taglish evaluation, calibrated thresholds, native phone companion, and NPU acceleration are future work.
+Technologies and frameworks: Rust, Axum, Tokio, SQLx, SQLite, static HTML/CSS/JavaScript, Transformers.js, and ONNX Runtime Web.
+APIs and cloud services: GitHub Pages hosts the frontend. The Rust JSON API supports submissions, tracking, agency workflows, and appeals. Google Gemini is called directly from the browser when requester drafting is enabled. Modal is an optional private government AI provider. The deployment configuration includes a VPS with HTTPS.
+What runs locally: The Rust API and SQLite database can run locally, alongside a static frontend preview. After the first model download, browser triage inference runs on the reviewer's device through WebAssembly/CPU.
+What requires internet: The first classifier download, hosted frontend and API access, Gemini drafting, and optional Modal AI. Browser classification processes request text locally; Gemini drafting sends draft details and the user-supplied API key directly to Google over HTTPS.
+Existing code and assets: This hackathon repository continues work from an earlier iTanongMo workspace. The showcase uses synthetic cases and staged API responses; it does not demonstrate live agency participation.
+AI development tools: OpenAI Codex assisted preparation of this submission draft. Add any other AI development tools actually used.
+
+SUBMISSION CHECKLIST
+- Replace the demo-video placeholder with a direct public video link. The existing video is 90 seconds; shorten it if the event strictly requires around one minute.
+- Replace the screenshot placeholders with direct public image links.
+- Replace the X / LinkedIn placeholder with a real video-post URL.
+- Add exact hardware details and any other AI development tools used, if known.
