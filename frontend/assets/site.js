@@ -4,7 +4,6 @@
   const configuredUrl = window.ITANONGMO_CONFIG?.apiBaseUrl || "";
   const apiBaseUrl = configuredUrl.replace(/\/$/, "");
   const currentPage = window.location.pathname.split("/").pop() || "index.html";
-  const portalPages = new Set(["login.html", "citizen.html", "government-demo.html"]);
   const iconPaths = Object.freeze({
     about: "m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z",
     government: "M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z",
@@ -59,23 +58,76 @@
     const navigation = document.createElement("nav");
     navigation.className = "main-navigation";
     navigation.setAttribute("aria-label", "Main navigation");
-    if (portalPages.has(currentPage)) {
-      navigation.append(
-        navigationItem("Citizen portal", "citizen.html", { current: currentPage === "citizen.html", icon: "request" }),
-        navigationItem("Government portal", "government-demo.html", {
-          current: currentPage === "government-demo.html",
-          icon: "government",
-        }),
-        navigationItem("Sign in", "login.html", { current: currentPage === "login.html", icon: "key" }),
-      );
-    } else {
-      navigation.append(
-        navigationItem("Make a request", "request.html", { current: currentPage === "request.html", icon: "request" }),
-        navigationItem("Track a request", "track.html", { current: currentPage === "track.html", icon: "track" }),
-        navigationItem("About", "about.html", { current: currentPage === "about.html", icon: "about" }),
-        navigationItem("Portal sign in", "login.html", { icon: "key" }),
-      );
+    const authItem = navigationItem("Sign in", "login.html", { current: currentPage === "login.html", icon: "key" });
+    navigation.append(
+      navigationItem("About", "about.html", { current: currentPage === "about.html", icon: "about" }),
+      authItem,
+    );
+    const authStatus = document.createElement("span");
+    authStatus.className = "header-auth-status";
+    authStatus.setAttribute("role", "status");
+    const authLink = authItem.querySelector("a");
+    authLink.addEventListener("click", async (event) => {
+      if (authLink.dataset.session !== "active") return;
+      event.preventDefault();
+      await signOut(authLink, authStatus);
+    });
+    showSessionAction(authLink);
+    const headerActions = document.createElement("div");
+    headerActions.className = "header-actions";
+    headerActions.append(navigation, authStatus);
+    header.replaceChildren(brand, headerActions);
+    if (!header.isConnected) document.body.prepend(header);
+  }
+
+  // Mental model: the backend session selects the header action; logout verifies it again for a current CSRF token.
+  async function showSessionAction(authLink) {
+    const session = await readSession();
+    if (!session) return;
+    authLink.dataset.session = "active";
+    authLink.textContent = "Sign out";
+    authLink.href = "#";
+    authLink.removeAttribute("aria-current");
+  }
+
+  async function signOut(authLink, authStatus) {
+    authStatus.textContent = "";
+    const session = await readSession();
+    if (!session) {
+      window.location.assign("login.html");
+      return;
     }
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/v1/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+        headers: { Accept: "application/json", "Content-Type": "application/json", "X-CSRF-Token": session.csrf_token },
+        body: "{}",
+      });
+      if (!response.ok) throw new Error("Sign out failed. Please try again.");
+      window.location.replace("login.html");
+    } catch {
+      authStatus.textContent = "Sign out failed. Please try again.";
+      authLink.focus();
+    }
+  }
+
+  async function readSession() {
+    if (!apiBaseUrl) return null;
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/v1/auth/session`, {
+        credentials: "include",
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) return null;
+      const payload = await response.json();
+      return payload.data?.csrf_token && payload.data?.actor ? payload.data : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function createLanguagePicker() {
     const languagePicker = document.createElement("label");
     languagePicker.className = "language-picker";
     languagePicker.append(document.createElement("span"));
@@ -91,11 +143,7 @@
     languageSelect.value = window.iTanongMoLanguage?.current || "en";
     languageSelect.addEventListener("change", () => window.iTanongMoLanguage?.setLanguage(languageSelect.value));
     languagePicker.append(languageSelect);
-    const headerActions = document.createElement("div");
-    headerActions.className = "header-actions";
-    headerActions.append(navigation, languagePicker);
-    header.replaceChildren(brand, headerActions);
-    if (!header.isConnected) document.body.prepend(header);
+    return languagePicker;
   }
 
   function renderFooter() {
@@ -108,7 +156,7 @@
       navigationItem("Privacy", "privacy.html", { current: currentPage === "privacy.html", icon: "shield" }),
       navigationItem("Accessibility", "accessibility.html", { current: currentPage === "accessibility.html", icon: "about" }),
     );
-    footer.replaceChildren(navigation);
+    footer.replaceChildren(navigation, createLanguagePicker());
     if (!footer.isConnected) document.body.append(footer);
   }
 

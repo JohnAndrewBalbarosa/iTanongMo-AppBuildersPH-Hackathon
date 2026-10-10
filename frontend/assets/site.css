@@ -77,6 +77,15 @@ main {
   min-width: 0;
 }
 
+.header-auth-status {
+  color: #a53636;
+  font-size: 0.8rem;
+}
+
+.header-auth-status:empty {
+  display: none;
+}
+
 .language-picker {
   display: inline-flex;
   align-items: center;
@@ -387,6 +396,11 @@ legend {
 }
 
 .site-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
   padding-block: 1.4rem 2rem;
   border-top: 1px solid var(--line);
 }
@@ -443,12 +457,6 @@ dialog::backdrop {
 
   .header-actions {
     display: contents;
-  }
-
-  .language-picker {
-    position: absolute;
-    top: 0.55rem;
-    right: 1rem;
   }
 
   .main-navigation {
@@ -578,6 +586,22 @@ dialog::backdrop {
 
 .demo-accounts p {
   overflow-wrap: anywhere;
+}
+
+.citizen-section-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.citizen-section-navigation a {
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--surface);
+  font-weight: 650;
+  text-decoration: none;
 }
 
 .portal-heading,
