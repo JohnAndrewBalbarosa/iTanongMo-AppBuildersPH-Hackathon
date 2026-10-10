@@ -331,6 +331,60 @@ async fn logout_requires_csrf_revokes_session_and_clears_cookie() {
 }
 
 #[tokio::test]
+async fn government_reads_preserve_csrf_for_concurrent_logout() {
+    let pool = database().await;
+    let app = api(pool.clone(), "https://api.example");
+    let signed_in = login(&app, OFFICER_EMAIL, OFFICER_PASSWORD).await;
+    let cookie = session_cookie(&signed_in);
+    let restored = authenticated_get(&app, "/api/v1/auth/session", &cookie).await;
+    assert_eq!(restored.status, StatusCode::OK);
+    let token = csrf(&restored);
+    let original_hash: String = sqlx::query_scalar(
+        "SELECT csrf_hash FROM auth_sessions WHERE user_id='auth-officer-judge' AND revoked_at IS NULL",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    let (board, detail) = tokio::join!(
+        authenticated_get(&app, "/api/v1/government/board", &cookie),
+        authenticated_get(&app, "/api/v1/government/requests/FOI-2026-002", &cookie),
+    );
+    for read in [board, detail] {
+        assert_eq!(read.status, StatusCode::OK);
+        assert_eq!(read.body["data"]["session"]["actor"]["id"], "dost-fro");
+        assert!(read.body["data"]["session"].get("csrf_token").is_none());
+    }
+    let current_hash: String = sqlx::query_scalar(
+        "SELECT csrf_hash FROM auth_sessions WHERE user_id='auth-officer-judge' AND revoked_at IS NULL",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(original_hash, current_hash);
+    let logout = app.clone().oneshot(
+        Request::post("/api/v1/auth/logout")
+            .header(header::COOKIE, &cookie)
+            .header("x-csrf-token", token)
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from("{}"))
+            .unwrap(),
+    );
+    let (logout, _) = tokio::join!(
+        logout,
+        authenticated_get(&app, "/api/v1/government/board", &cookie),
+    );
+    let logout = snapshot(logout.unwrap()).await;
+    assert_eq!(logout.status, StatusCode::OK);
+    assert_eq!(logout.body["data"]["signed_out"], true);
+    assert_eq!(
+        authenticated_get(&app, "/api/v1/auth/session", &cookie)
+            .await
+            .status,
+        StatusCode::UNAUTHORIZED
+    );
+}
+
+#[tokio::test]
 async fn government_mutations_require_matching_csrf() {
     let app = api(database().await, "https://api.example");
     let signed_in = login(&app, OFFICER_EMAIL, OFFICER_PASSWORD).await;

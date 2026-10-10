@@ -244,36 +244,39 @@ async fn government_session(
     State(state): State<AppState>,
     headers: HeaderMap,
 ) -> AppResult<Json<serde_json::Value>> {
-    let (actor, csrf) = government_read_context(&state, &headers).await?;
+    let (actor, csrf) = government_session_context(&state, &headers).await?;
     Ok(Json(json!({
-        "data": government_session_json(&actor, &csrf)
+        "data": government_session_json(&actor, Some(&csrf))
     })))
 }
 
-fn government_session_json(actor: &ActorContext, csrf: &str) -> serde_json::Value {
-    json!({
+fn government_session_json(actor: &ActorContext, csrf: Option<&str>) -> serde_json::Value {
+    let mut session = json!({
         "actor": {
             "id": actor.subject_id,
             "display_name": actor.display_name,
             "actor_type": &actor.actor_type,
             "agency_id": actor.agency_id,
             "roles": actor.roles.iter().map(Role::as_str).collect::<Vec<_>>()
-        },
-        "csrf_token": csrf
-    })
+        }
+    });
+    if let Some(csrf) = csrf {
+        session["csrf_token"] = json!(csrf);
+    }
+    session
 }
 
 async fn government_dashboard(
     State(state): State<AppState>,
     headers: HeaderMap,
 ) -> AppResult<Json<serde_json::Value>> {
-    let (actor, csrf) = government_read_context(&state, &headers).await?;
+    let actor = government_context(&state, &headers).await?.actor;
     let agency_id = actor.agency_id.as_deref().ok_or(AppError::Forbidden)?;
     let cards = board::load_board(&state.pool, agency_id).await?;
     let notifications = notifications::list_for_persona(&state.pool, &actor.subject_id).await?;
     Ok(Json(json!({
         "data": {
-            "session": government_session_json(&actor, &csrf),
+            "session": government_session_json(&actor, None),
             "cards": cards.into_iter().map(|card| json!({
                 "reference": card.public_reference,
                 "title": card.title,
@@ -302,7 +305,7 @@ async fn government_request(
     headers: HeaderMap,
     Path(reference): Path<String>,
 ) -> AppResult<Json<serde_json::Value>> {
-    let (actor, csrf) = government_read_context(&state, &headers).await?;
+    let actor = government_context(&state, &headers).await?.actor;
     let request = requests::load_request(&state.pool, &reference).await?;
     ensure_government_read(&actor, &request.agency_id)?;
     let events = requests::list_events(&state.pool, &request.id).await?;
@@ -315,7 +318,7 @@ async fn government_request(
     let actions = requests::allowed_actions(&request.status);
     Ok(Json(json!({
         "data": {
-            "session": government_session_json(&actor, &csrf),
+            "session": government_session_json(&actor, None),
             "request": {
                 "reference": request.public_reference,
                 "agency_id": request.agency_id,
@@ -973,7 +976,8 @@ async fn government_context(
     auth::session::require_government(authenticated)
 }
 
-async fn government_read_context(
+// Rotate only when establishing a session; data reads must preserve pending writes' token.
+async fn government_session_context(
     state: &AppState,
     headers: &HeaderMap,
 ) -> AppResult<(ActorContext, String)> {

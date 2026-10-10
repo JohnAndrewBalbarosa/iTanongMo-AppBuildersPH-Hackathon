@@ -89,3 +89,33 @@ test("government mutation uses the CSRF token returned by the latest read", asyn
   });
   assert.equal(requests[1].options.headers["X-CSRF-Token"], "rotated-token");
 });
+
+test("logout keeps the established CSRF token while government reads are pending", async () => {
+  const testSource = source.replace("  initializePortal();", "  window.testApi = api;");
+  assert.notEqual(testSource, source);
+  const requests = [];
+  let releaseBoard;
+  const boardResponse = new Promise((resolve) => { releaseBoard = resolve; });
+  const window = { ITANONGMO_CONFIG: { apiBaseUrl: "https://api.example.test" } };
+  vm.runInNewContext(testSource, {
+    document: { body: { dataset: { portalPage: "government" } } },
+    window,
+    fetch: async (url, options) => {
+      requests.push({ url, options });
+      if (url.endsWith("/government/board")) return boardResponse;
+      return {
+        ok: true,
+        json: async () => ({ data: url.endsWith("/government/session")
+          ? { session: { csrf_token: "established-token" } }
+          : { signed_out: true } }),
+      };
+    },
+  });
+  await window.testApi("/government/session");
+  const pendingRead = window.testApi("/government/board");
+  await window.testApi("/auth/logout", { method: "POST", body: {} });
+  assert.equal(requests[2].options.headers["X-CSRF-Token"], "established-token");
+  assert.equal(requests[2].options.credentials, "include");
+  releaseBoard({ ok: true, json: async () => ({ data: { session: { actor: {} }, cards: [] } }) });
+  await pendingRead;
+});
