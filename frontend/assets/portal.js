@@ -346,6 +346,7 @@
       error.status = response.status;
       throw error;
     }
+    if (payload.data?.session?.csrf_token) csrfToken = payload.data.session.csrf_token;
     return payload.data;
   }
 

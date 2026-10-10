@@ -63,3 +63,29 @@ test("failed login stays on the page and shows the backend error", async () => {
   assert.deepEqual(page.destinations, []);
   assert.equal(page.status.textContent, "Invalid email or password.");
 });
+
+test("government mutation uses the CSRF token returned by the latest read", async () => {
+  const testSource = source.replace("  initializePortal();", "  window.testApi = api;");
+  assert.notEqual(testSource, source);
+  const requests = [];
+  const window = { ITANONGMO_CONFIG: { apiBaseUrl: "https://api.example.test" } };
+  vm.runInNewContext(testSource, {
+    document: { body: { dataset: { portalPage: "government" } } },
+    window,
+    fetch: async (url, options) => {
+      requests.push({ url, options });
+      return {
+        ok: true,
+        json: async () => ({ data: url.endsWith("/government/board")
+          ? { session: { csrf_token: "rotated-token" }, cards: [] }
+          : { outcome: "triage_saved" } }),
+      };
+    },
+  });
+  await window.testApi("/government/board");
+  await window.testApi("/government/requests/FOI-1/triage", {
+    method: "POST",
+    body: { categories: "safety_review" },
+  });
+  assert.equal(requests[1].options.headers["X-CSRF-Token"], "rotated-token");
+});
