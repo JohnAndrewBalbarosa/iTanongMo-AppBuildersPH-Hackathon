@@ -13,8 +13,8 @@ src/
   organization/    agency directory, DOST hierarchy, routing targets
   requests/        intake, deadlines, conversation, documents, workflow
   triage/          versioned high-recall deterministic rules
-  ai/              government-only private Modal adapter and advisory jobs
-  requester_ai/    disabled-by-default backend relay for a future managed mode
+  ai/              shared private Modal adapter and government advisory jobs
+  requester_ai/    authenticated shared-provider citizen drafting and bounded usage controls
   board/           government Kanban projections
   notifications/   in-app notification records
   audit/           structured, append-only application audit events
@@ -31,9 +31,9 @@ This hybrid follows the useful traits of the PyTorch PH and Agora Artifacts stru
 - The Rust process is the only application backend. It owns JSON APIs, validation, authorization, SQLite, audit records, and deterministic decisions. It does not serve application HTML.
 - GitHub Pages serves all citizen and government HTML, CSS, JavaScript, and the non-authoritative agency fallback. It contains no provider secret, business decision, or authoritative state.
 - The API allows one configured frontend origin through exact-origin CORS. Requests from GitHub Pages require an HTTPS API origin.
-- The private Modal AI endpoint is government-only. It returns advisory triage and response suggestions and cannot publish, decide, or send.
-- Requester Gemini BYOK drafting calls Google directly from the browser. The user key stays in tab memory for at most 15 minutes and never reaches the Rust API. The browser validates JSON for the email body, form fields, and agency queries without changing the manual name or title. The existing feature-gated Rust relay is reserved for a future managed mode and remains disabled until authentication, rate limits, quotas, and cost controls are implemented.
-- The requester UI states that the token leaves the computer over HTTPS for the selected provider call. “Local” means ephemeral tab memory and zero application persistence, not offline inference.
+- The private Modal AI endpoint serves citizen request drafts and government advisory triage/response suggestions. It cannot publish, decide, or send.
+- Citizen AI drafting uses the shared server-owned backend provider. The citizen signs in and sends a CSRF-protected request; no user API key or provider selection is accepted. AI output is schema-validated, previewed, and applied only on explicit user action. Identity, title, agency selection, consent, and submission remain under citizen control. Limits per API process: 5 attempts/user/minute, 60 attempts/hour total, 2 concurrent calls, 45-second timeout, and 2,048 output tokens. Restarting the process resets in-memory limits; multiple replicas need a shared limiter or upstream budget enforcement.
+- Citizen drafting sends only the manual title and request instructions through the authenticated backend to its configured model service; provider credentials remain server-owned. Prompts and draft contents are not persisted by the drafting service.
 - Every government AI output stores model, prompt version, input/output hashes, and review metadata. Publishing requires a separate authorized human action and a matching output hash.
 - Email transport, identity proofing, eGov integration, and mobile push are post-MVP adapters. The domain workflow remains transport-independent.
 

@@ -39,6 +39,15 @@ async fn database() -> SqlitePool {
 }
 
 fn api(pool: SqlitePool, public_origin: &str) -> Router {
+    configured_api(pool, public_origin, false, None)
+}
+
+fn configured_api(
+    pool: SqlitePool,
+    public_origin: &str,
+    requester_ai_enabled: bool,
+    ai: Option<Arc<dyn itanongmo::ai::AiProvider>>,
+) -> Router {
     let config = AppConfig {
         bind: "127.0.0.1:0".into(),
         database_url: "sqlite::memory:".into(),
@@ -48,8 +57,7 @@ fn api(pool: SqlitePool, public_origin: &str) -> Router {
         ai_base_url: None,
         ai_proxy_token: None,
         ai_model: "test".into(),
-        requester_ai_enabled: false,
-        requester_ai_token_ttl_seconds: 900,
+        requester_ai_enabled,
         demo_reset_on_start: false,
         enable_persona_login: false,
     };
@@ -57,7 +65,7 @@ fn api(pool: SqlitePool, public_origin: &str) -> Router {
         pool,
         config: Arc::new(config),
         auth: AuthService::new().unwrap(),
-        ai: None,
+        ai,
         requester_ai: itanongmo::requester_ai::RequesterAiService::new().unwrap(),
     })
 }
@@ -615,4 +623,186 @@ async fn authenticated_get(app: &Router, path: &str, cookie: &str) -> Snapshot {
             .unwrap(),
     )
     .await
+}
+
+struct CitizenDraftProvider {
+    output: Value,
+    calls: std::sync::atomic::AtomicUsize,
+}
+
+#[async_trait::async_trait]
+impl itanongmo::ai::AiProvider for CitizenDraftProvider {
+    fn model_id(&self) -> &str {
+        "shared-test-model"
+    }
+
+    async fn generate_json(
+        &self,
+        task_kind: &str,
+        payload: Value,
+    ) -> itanongmo::error::AppResult<Value> {
+        assert_eq!(task_kind, "requester_draft");
+        assert_eq!(payload.as_object().unwrap().len(), 2);
+        assert!(payload.get("provider").is_none());
+        self.calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        Ok(self.output.clone())
+    }
+}
+
+fn citizen_draft_input() -> Value {
+    json!({"what_to_ask":"Please provide the latest public program reports.","manual_title":"Public program reports"})
+}
+
+fn citizen_draft_output() -> Value {
+    json!({"email_body":"Please provide the latest public program reports for review.","description":"The latest public program reports and supporting summaries.","purpose":"Public-interest research","urgency_details":"","agency_queries":["Department of Science and Technology"]})
+}
+
+async fn draft_request(
+    app: &Router,
+    cookie: Option<&str>,
+    token: Option<&str>,
+    payload: Value,
+) -> Snapshot {
+    let mut request = Request::post("/api/v1/requester-ai/draft")
+        .header(header::CONTENT_TYPE, "application/json");
+    if let Some(cookie) = cookie {
+        request = request.header(header::COOKIE, cookie);
+    }
+    if let Some(token) = token {
+        request = request.header("x-csrf-token", token);
+    }
+    snapshot(
+        app.clone()
+            .oneshot(request.body(Body::from(payload.to_string())).unwrap())
+            .await
+            .unwrap(),
+    )
+    .await
+}
+
+#[tokio::test]
+async fn shared_citizen_ai_checks_auth_csrf_role_and_rate_before_provider_calls() {
+    let pool = database().await;
+    let provider = Arc::new(CitizenDraftProvider {
+        output: citizen_draft_output(),
+        calls: 0.into(),
+    });
+    let app = configured_api(
+        pool.clone(),
+        "https://api.example",
+        true,
+        Some(provider.clone()),
+    );
+    let citizen = login(&app, CITIZEN_EMAIL, CITIZEN_PASSWORD).await;
+    let officer = login(&app, OFFICER_EMAIL, OFFICER_PASSWORD).await;
+    let cookie = session_cookie(&citizen);
+    assert_eq!(
+        draft_request(&app, None, None, citizen_draft_input())
+            .await
+            .status,
+        StatusCode::UNAUTHORIZED
+    );
+    assert_eq!(
+        draft_request(&app, Some(&cookie), None, citizen_draft_input())
+            .await
+            .status,
+        StatusCode::FORBIDDEN
+    );
+    assert_eq!(
+        draft_request(
+            &app,
+            Some(&cookie),
+            Some("wrong-token"),
+            citizen_draft_input()
+        )
+        .await
+        .status,
+        StatusCode::FORBIDDEN
+    );
+    assert_eq!(
+        draft_request(
+            &app,
+            Some(&session_cookie(&officer)),
+            Some(csrf(&officer)),
+            citizen_draft_input()
+        )
+        .await
+        .status,
+        StatusCode::FORBIDDEN
+    );
+    let mut obsolete = citizen_draft_input();
+    obsolete["provider"] = json!("gemini");
+    obsolete["model"] = json!("user-selected-model");
+    assert_eq!(
+        draft_request(&app, Some(&cookie), Some(csrf(&citizen)), obsolete)
+            .await
+            .status,
+        StatusCode::UNPROCESSABLE_ENTITY
+    );
+    assert_eq!(provider.calls.load(std::sync::atomic::Ordering::SeqCst), 0);
+    for _ in 0..5 {
+        let result = draft_request(
+            &app,
+            Some(&cookie),
+            Some(csrf(&citizen)),
+            citizen_draft_input(),
+        )
+        .await;
+        assert_eq!(result.status, StatusCode::OK);
+        assert_eq!(result.body["data"], citizen_draft_output());
+    }
+    assert_eq!(
+        draft_request(
+            &app,
+            Some(&cookie),
+            Some(csrf(&citizen)),
+            citizen_draft_input()
+        )
+        .await
+        .status,
+        StatusCode::TOO_MANY_REQUESTS
+    );
+    assert_eq!(provider.calls.load(std::sync::atomic::Ordering::SeqCst), 5);
+    let requests: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM foi_requests")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(requests, 3);
+}
+
+#[tokio::test]
+async fn shared_citizen_ai_rejects_invalid_output_and_missing_configuration() {
+    let pool = database().await;
+    let mut invalid = citizen_draft_output();
+    invalid["requester_name"] = json!("Invented identity");
+    let provider = Arc::new(CitizenDraftProvider {
+        output: invalid,
+        calls: 0.into(),
+    });
+    let app = configured_api(pool.clone(), "https://api.example", true, Some(provider));
+    let citizen = login(&app, CITIZEN_EMAIL, CITIZEN_PASSWORD).await;
+    let cookie = session_cookie(&citizen);
+    assert_eq!(
+        draft_request(
+            &app,
+            Some(&cookie),
+            Some(csrf(&citizen)),
+            citizen_draft_input()
+        )
+        .await
+        .status,
+        StatusCode::UNPROCESSABLE_ENTITY
+    );
+    let unavailable = configured_api(pool, "https://api.example", true, None);
+    assert_eq!(
+        draft_request(
+            &unavailable,
+            Some(&cookie),
+            Some(csrf(&citizen)),
+            citizen_draft_input()
+        )
+        .await
+        .status,
+        StatusCode::SERVICE_UNAVAILABLE
+    );
 }

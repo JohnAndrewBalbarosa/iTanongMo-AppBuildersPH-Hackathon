@@ -73,6 +73,7 @@
   }
 
   async function initializeCitizenPortal() {
+    window.iTanongMoCitizenAi.initialize(api);
     const userName = document.querySelector("[data-user-name]");
     userName.setAttribute("data-language-ignore", "");
     userName.textContent = session.actor.display_name;

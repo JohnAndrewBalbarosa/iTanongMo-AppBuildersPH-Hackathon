@@ -40,6 +40,12 @@ pub struct DraftSuggestion {
 
 pub fn validate_output(task_kind: &str, value: serde_json::Value) -> AppResult<serde_json::Value> {
     match task_kind {
+        "requester_draft" => {
+            let parsed: crate::requester_ai::RequesterAiDraft =
+                serde_json::from_value(value.clone())
+                    .map_err(|_| AppError::Validation("Invalid citizen AI draft JSON".into()))?;
+            parsed.validate()?;
+        }
         "triage" => {
             let parsed: TriageSuggestion = serde_json::from_value(value.clone())
                 .map_err(|_| AppError::Validation("Hindi valid ang AI triage JSON".into()))?;
@@ -78,6 +84,7 @@ pub fn validate_output(task_kind: &str, value: serde_json::Value) -> AppResult<s
 
 pub fn json_schema(task_kind: &str) -> serde_json::Value {
     match task_kind {
+        "requester_draft" => crate::requester_ai::response_schema(),
         "triage" => serde_json::json!({
             "type":"object","additionalProperties":false,
             "required":["schema_version","request_id","suggested_categories","suggested_destination_units","urgency","complexity","sensitive_data_risk","clarification_questions","supporting_field_offsets","limitations","requires_human_review"],

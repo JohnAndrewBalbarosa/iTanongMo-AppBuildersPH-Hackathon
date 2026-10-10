@@ -67,7 +67,6 @@ fn api_with_persona_login(pool: SqlitePool, enable_persona_login: bool) -> axum:
         ai_proxy_token: None,
         ai_model: "test".into(),
         requester_ai_enabled: false,
-        requester_ai_token_ttl_seconds: 900,
         demo_reset_on_start: false,
         enable_persona_login,
     };
@@ -347,8 +346,6 @@ async fn legacy_persona_login_is_disabled_by_default() {
 async fn requester_ai_exposes_one_json_draft_endpoint() {
     let app = api(database().await);
     let payload = serde_json::json!({
-        "provider": "openai",
-        "model": "gpt-4o-mini",
         "what_to_ask": "Please provide the latest public program reports.",
         "manual_title": "Public program reports"
     });

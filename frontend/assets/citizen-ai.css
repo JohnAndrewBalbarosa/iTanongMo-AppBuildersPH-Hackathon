@@ -1,0 +1,16 @@
+.citizen-ai-options {
+  margin-bottom: 1.5rem;
+  padding: 1.25rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  background: #f8fafc;
+}
+
+.citizen-ai-options summary { cursor: pointer; font-weight: 600; }
+.citizen-ai-options p { margin-block: 1rem; line-height: 1.6; }
+.citizen-ai-options button { margin-block: 1rem 0.25rem; min-height: 2.75rem; }
+.citizen-ai-options label { margin-block: 1.25rem 0.5rem; }
+.citizen-ai-options textarea { width: 100%; box-sizing: border-box; }
+#citizen-ai-preview { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }
+
+.portal-dashboard .citizen-workspace { align-items: start; gap: 2rem; }

@@ -20,7 +20,6 @@ pub struct AppConfig {
     pub ai_proxy_token: Option<String>,
     pub ai_model: String,
     pub requester_ai_enabled: bool,
-    pub requester_ai_token_ttl_seconds: u64,
     pub demo_reset_on_start: bool,
     pub enable_persona_login: bool,
 }
@@ -68,11 +67,6 @@ impl AppConfig {
             ai_proxy_token: non_empty_env("ITANONGMO_AI_PROXY_TOKEN"),
             ai_model: env::var("ITANONGMO_AI_MODEL").unwrap_or_else(|_| "Qwen/Qwen3-4B".into()),
             requester_ai_enabled,
-            requester_ai_token_ttl_seconds: env::var("ITANONGMO_REQUESTER_AI_TOKEN_TTL_SECONDS")
-                .ok()
-                .and_then(|value| value.parse().ok())
-                .unwrap_or(900)
-                .clamp(60, 3_600),
             demo_reset_on_start: env::var("ITANONGMO_DEMO_RESET_ON_START").ok().as_deref()
                 == Some("true"),
             enable_persona_login: env::var("ITANONGMO_ENABLE_PERSONA_LOGIN").ok().as_deref()

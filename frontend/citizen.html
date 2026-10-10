@@ -6,6 +6,7 @@
   <meta name="description" content="Submit and track public information requests through iTanongMo.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src https: http://127.0.0.1:* http://localhost:*; object-src 'none'; base-uri 'none'; form-action 'self'">
   <title>Citizen portal — iTanongMo</title>
+  <link rel="stylesheet" href="assets/citizen-ai.css">
 </head>
 <body data-portal-page="citizen">
   <header><a href="index.html">iTanongMo</a></header>
@@ -35,6 +36,17 @@
         <p class="eyebrow">New request</p>
         <h2 id="new-request-title">Ask for public information</h2>
         <form id="citizen-request-form">
+          <details class="citizen-ai-options">
+            <summary>Ask using AI</summary>
+            <p>Describe the records you need. AI can prepare a draft for you to review. Enter your request title below first.</p>
+            <label for="citizen-ai-question">What would you like to ask?</label>
+            <textarea id="citizen-ai-question" maxlength="8000"></textarea>
+            <button type="button" id="citizen-ai-generate">Generate AI draft</button>
+            <p id="citizen-ai-status" role="status"></p>
+            <pre id="citizen-ai-preview" data-language-ignore></pre>
+            <button type="button" id="citizen-ai-apply" disabled>Apply draft</button>
+            <p>Check the suggested agencies against the agency list. AI may make mistakes; you decide what to submit.</p>
+          </details>
           <label for="citizen-agency">Government agency</label>
           <select id="citizen-agency" name="agency_ids" required></select>
           <label for="citizen-requester-email">Contact email</label>
@@ -47,7 +59,7 @@
           <textarea id="citizen-request-purpose" name="purpose" minlength="3" maxlength="1000" required></textarea>
           <label for="citizen-request-urgency">Urgency or safety context (optional)</label>
           <textarea id="citizen-request-urgency" name="urgency_details" maxlength="1000"></textarea>
-          <label><input name="consent" type="checkbox" value="yes" required> I acknowledge the demo privacy notice.</label>
+          <label class="portal-consent"><input name="consent" type="checkbox" value="yes" required> I acknowledge the demo privacy notice.</label>
           <button type="submit" class="portal-primary-action">Submit request</button>
         </form>
         <p id="citizen-submit-status" class="form-status" role="status"></p>
@@ -68,6 +80,7 @@
   </main>
   <script src="config.js"></script>
   <script src="assets/language.js"></script><script src="assets/site.js"></script>
+  <script src="assets/citizen-ai.js"></script>
   <script src="assets/portal.js"></script>
 </body>
 </html>

@@ -8,14 +8,14 @@ The sticky header offers a Tagalog/English selector on every page, including bot
 
 1. Give the Rust API an HTTPS origin such as `https://api.example.gov.ph`.
 2. Set `ITANONGMO_FRONTEND_ORIGIN` on the Rust service to the exact GitHub Pages origin, such as `https://owner.github.io`. Do not include a repository path because an HTTP origin never includes a path.
-3. Set the repository variable `ITANONGMO_API_BASE_URL` to the HTTPS Rust API origin without a path. When unset, submission and tracking remain unavailable, but browser-only Gemini BYOK drafting works on Pages.
+3. Set the repository variable `ITANONGMO_API_BASE_URL` to the HTTPS Rust API origin without a path. Submission, tracking, and shared AI drafting require the backend.
 4. Enable GitHub Pages with **GitHub Actions** as its source.
 
 The deployment workflow validates the API origin and writes it to `config.js` inside the deployment artifact. No API key or server credential belongs in repository variables or static files.
 
-Requester drafting calls Gemini directly from the browser using a user-supplied API key kept in tab memory for at most 15 minutes. The frontend validates the returned JSON before applying it. The existing Rust requester-AI relay remains disabled by default and is reserved for a future server-managed offering; public use needs authentication, rate limits, quotas, and cost controls.
+Citizen AI drafting uses the shared server-owned backend provider. The citizen signs in and sends a CSRF-protected request; no user API key or provider selection is accepted. AI output is schema-validated, previewed, and applied only on explicit user action. Identity, title, agency selection, consent, and submission remain under citizen control. Limits per API process: 5 attempts/user/minute, 60 attempts/hour total, 2 concurrent calls, 45-second timeout, and 2,048 output tokens. Restarting the process resets in-memory limits; multiple replicas need a shared limiter or upstream budget enforcement.
 
-The submission response contains a requester capability token once. The citizen client displays it and keeps it in same-tab `sessionStorage`; it never places the token in a URL. Replies and appeals send it through the `Authorization` header. Verified accounts replace this capability after MVP.
+The citizen portal uses its server-side session cookie and CSRF token for submissions, replies, and appeals. Legacy request tracking still supports batch capability tokens through the `Authorization` header; those tokens are separate from AI credentials. `request.html` redirects to the authenticated citizen portal.
 
 ## Demonstration portals
 

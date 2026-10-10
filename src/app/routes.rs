@@ -746,8 +746,7 @@ async fn api_config(State(state): State<AppState>) -> Json<serde_json::Value> {
         "data": {
             "api_version": "v1",
             "government_workspace_path": "government.html",
-            "requester_ai_enabled": state.config.requester_ai_enabled,
-            "requester_ai_token_ttl_seconds": state.config.requester_ai_token_ttl_seconds,
+            "requester_ai_enabled": state.config.requester_ai_enabled && state.ai.is_some(),
             "maximum_agencies_per_submission": 10
         }
     }))
@@ -820,10 +819,17 @@ async fn requester_ai_draft(
     State(state): State<AppState>,
     headers: HeaderMap,
     Json(input): Json<RequesterAiInput>,
-) -> AppResult<Json<crate::requester_ai::RequesterAiDraft>> {
+) -> AppResult<Json<serde_json::Value>> {
     ensure_requester_ai_enabled(&state)?;
-    let token = bearer_token(&headers)?;
-    Ok(Json(state.requester_ai.draft(token, input).await?))
+    let authenticated = auth::session::required(&state.pool, &headers).await?;
+    let authenticated = auth::session::require_requester(authenticated)?;
+    auth::session::verify_csrf(&authenticated, &headers, None)?;
+    let provider = state.ai.as_deref().ok_or(AppError::AiUnavailable)?;
+    let draft = state
+        .requester_ai
+        .draft(&authenticated.user_id, provider, input)
+        .await?;
+    Ok(Json(json!({"data": draft})))
 }
 
 fn ensure_requester_ai_enabled(state: &AppState) -> AppResult<()> {
@@ -834,19 +840,20 @@ fn ensure_requester_ai_enabled(state: &AppState) -> AppResult<()> {
     }
 }
 
+async fn api_agencies(State(state): State<AppState>) -> AppResult<Json<serde_json::Value>> {
+    let rows = organization::list_agencies(&state.pool).await?;
+    Ok(Json(
+        json!({"data":rows.into_iter().map(|a|json!({"id":a.id,"slug":a.slug,"short_name":a.short_name,"name":a.name,"official_url":a.official_url,"office_email":a.office_email,"source_url":a.source_url,"source_as_of":a.source_as_of})).collect::<Vec<_>>() }),
+    ))
+}
+
+// Legacy request tracking uses its own access token, separate from retired AI credentials.
 fn bearer_token(headers: &HeaderMap) -> AppResult<&str> {
     headers
         .get(header::AUTHORIZATION)
         .and_then(|value| value.to_str().ok())
         .and_then(|value| value.strip_prefix("Bearer "))
         .ok_or(AppError::Forbidden)
-}
-
-async fn api_agencies(State(state): State<AppState>) -> AppResult<Json<serde_json::Value>> {
-    let rows = organization::list_agencies(&state.pool).await?;
-    Ok(Json(
-        json!({"data":rows.into_iter().map(|a|json!({"id":a.id,"slug":a.slug,"short_name":a.short_name,"name":a.name,"official_url":a.official_url,"office_email":a.office_email,"source_url":a.source_url,"source_as_of":a.source_as_of})).collect::<Vec<_>>() }),
-    ))
 }
 
 async fn api_requests(State(state): State<AppState>) -> AppResult<Json<serde_json::Value>> {

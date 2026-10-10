@@ -30,3 +30,9 @@ The public demo accounts and seeded requests are synthetic; do not use this depl
 ## Recover
 
 Stop the service, preserve the failed database and WAL files, restore the latest verified backup into a new path, run `PRAGMA integrity_check`, update the database URL if needed, and start the service. Keep the failed copy for bounded diagnosis; do not overwrite it.
+
+## Shared citizen AI
+
+Configure `ITANONGMO_AI_BASE_URL`, `ITANONGMO_AI_PROXY_TOKEN`, and `ITANONGMO_AI_MODEL` in the private server environment, then set `ITANONGMO_REQUESTER_AI_ENABLED=true`. The existing HTTPS OpenAI-compatible provider must support structured JSON output and the `requester_draft` task contract. Reuse the same configured provider as government drafting. Do not place credentials in Pages, repository variables, or static assets.
+
+Deploy the API and frontend together after approval. Verify citizen login, AI draft preview/apply, manual submission, wrong-role/CSRF rejection, `429` limits, and provider-unavailable fallback. BYOK is retired; old `request.html` URLs redirect to the citizen portal. Rollback: restore the prior binary/frontend and keep `ITANONGMO_REQUESTER_AI_ENABLED=false` until both versions match. The token-TTL setting is retired.

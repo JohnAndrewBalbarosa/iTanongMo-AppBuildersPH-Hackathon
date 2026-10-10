@@ -139,3 +139,13 @@ const mutation = await fetch(url, {
 ```
 
 Do not send role, agency, unit, actor ID, or requester ID from the client as an authorization claim.
+
+## Citizen AI drafting
+
+`POST /api/v1/requester-ai/draft` requires an active citizen session cookie and `X-CSRF-Token`. JSON input contains only `what_to_ask` (20–8,000 characters) and `manual_title` (5–180 characters). Provider/model/key fields are rejected. The server selects its configured provider and credentials.
+
+Success: `{"data":{"email_body":"...","description":"...","purpose":"...","urgency_details":"...","agency_queries":["..."]}}`. Drafting does not create an FOI request. The citizen reviews the draft, applies editable details, selects an agency, and submits separately.
+
+Outcomes: `401` missing/expired session; `403` wrong role or CSRF; `422` invalid input/output; `429` usage/concurrency limit; `503` disabled/unconfigured/unavailable provider. `/api/v1/config` advertises `requester_ai_enabled` only when the feature and provider are configured. BYOK is retired; `request.html` redirects to the citizen portal.
+
+Usage controls per API process: 5 attempts/user/minute, 60 attempts/hour total, 2 concurrent calls, 45-second timeout, 2,048 maximum output tokens. Failed provider attempts consume quota. In-memory quotas reset on restart; replicas need a shared limiter/upstream budget. Logs include bounded outcomes and correlation IDs, never prompts, drafts, or credentials.
