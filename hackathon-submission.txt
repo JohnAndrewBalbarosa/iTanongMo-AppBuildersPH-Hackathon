@@ -33,3 +33,41 @@ SUBMISSION CHECKLIST
 - Replace the screenshot placeholders with direct public image links.
 - Replace the X / LinkedIn placeholder with a real video-post URL.
 - Add exact hardware details and any other AI development tools used, if known.
+
+============================================================
+LINKEDIN POST — ARCHITECTURE AND BERT-BASED TRIAGE GOAL
+============================================================
+
+Paano tutulungan ang FOI reviewers na makita agad ang mga request na maaaring kailangan ng mas maagang atensyon, nang hindi ipinapasa sa AI ang opisyal na desisyon?
+
+Iyan ang goal ko sa iTanongMo. May citizen portal para magsumite at sumubaybay ng FOI requests, at may agency-scoped work board para sa government reviewers. Nasa GitHub Pages ang static frontend; Rust/Axum at SQLite ang API at workflow backend. Ang agency staff pa rin ang nagre-review, nagro-route, at nagpapadala ng opisyal na tugon.
+
+Sa kasalukuyang triage flow, deterministic rules ang nagfa-flag ng posibleng time-sensitive, safety-related, sensitive-data, appeal, at iba pang cases. Nananatili sa ordinary queue ang mga hindi na-flag. May optional local classifier pilot din: pinned multilingual MiniLM ONNX ang nagbibigay ng category suggestions sa browser gamit ang WebAssembly/CPU. Hindi awtomatikong nase-save o nagiging desisyon ang model output; reviewer ang kailangang pumili at mag-confirm.
+
+Ang susunod kong integration goal ay isang FOI-focused, BERT-based JEB classification harness:
+1. Gumawa ng labeled Filipino, English, at Taglish FOI examples at sukatin ang recall, false positives, at latency.
+2. I-export ang validated model at tokenizer para sa local browser inference, at i-version ang label map at thresholds.
+3. Ipakita ang model suggestions kasama ng rule flags at mga deadline sa agency board. Ang priority view ay reviewer aid; hindi nito itatago ang ibang requests.
+4. I-record ang human confirmation o correction bago makaapekto ang triage sa routing. Mananatiling server-side ang agency authorization at audit trail.
+
+Privacy ang isang dahilan sa local inference: pagkatapos ng unang model download, sa reviewer device mapoproseso ang request text para sa classifier. Kailangan pa ring patunayan ang Filipino/Taglish accuracy at performance bago ito asahan sa operational workflow. Wala pang validated custom JEB checkpoint o phone NPU benchmark.
+
+Repo: https://github.com/JohnAndrewBalbarosa/iTanongMo-AppBuildersPH-Hackathon
+
+#iTanongMo #FreedomOfInformation #GovTech #AI #Philippines
+
+============================================================
+YOUTUBE VIDEO DESCRIPTION — ITANONGMO SHOWCASE
+============================================================
+
+Sa 90-second iTanongMo showcase na ito, makikita ang citizen FOI request flow, agency work board, routing, government response, at status timeline. Ang screen captures ay mula sa aktuwal na frontend, gamit ang synthetic requests at staged API responses para sa recording. Hindi ito live government transaction o patunay ng agency participation.
+
+Architecture: static frontend sa GitHub Pages; Rust/Axum API at SQLite para sa request workflow, agency-scoped access, at audit trail. May deterministic triage rules at optional browser-based MiniLM ONNX classifier na nagbibigay ng advisory suggestions para sa human review.
+
+Goal ko para sa susunod na iteration ang FOI-focused JEB model at BERT-based local triage harness. Target nitong makatulong sa reviewers na makita ang mga request na maaaring time-sensitive o kailangan ng espesyal na review, kasabay ng deadline at rule flags. Reviewer pa rin ang magko-confirm ng classification at opisyal na aksyon. Kailangan pa ng labeled Filipino/Taglish evaluation at device testing bago ito gamitin bilang operational priority aid.
+
+Source code at project notes: https://github.com/JohnAndrewBalbarosa/iTanongMo-AppBuildersPH-Hackathon
+
+Demo note: synthetic ang names, cases, dates, at responses. Walang live submission, login, o agency reply na nangyari habang nire-record ang video. May Tagalog narration subtitles; walang voice recording sa kasalukuyang MP4.
+
+#iTanongMo #FOI #GovTech #Philippines
