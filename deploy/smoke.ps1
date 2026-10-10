@@ -70,18 +70,11 @@ try {
         throw 'Exact-origin CORS smoke check failed.'
     }
     $trackedReference = $apiBatchBody.data.requests[0].reference
-    $requesterToken = $apiBatchBody.data.requester_access_token
-    if ($requesterToken.Length -ne 64) { throw 'Requester capability token smoke check failed.' }
-    $reply = Invoke-WebRequest `
-        "http://127.0.0.1:4387/api/v1/requests/$trackedReference/messages" `
-        -Method Post `
-        -Headers @{ Origin = 'https://example.github.io'; Authorization = "Bearer $requesterToken" } `
-        -ContentType 'application/json' `
-        -Body (@{ body = 'Synthetic requester follow-up for capability verification.' } | ConvertTo-Json) `
-        -UseBasicParsing
-    if ($reply.StatusCode -ne 201) { throw 'Requester reply capability smoke check failed.' }
+    if ($null -ne $apiBatchBody.data.requester_access_token) {
+        throw 'Guest submission unexpectedly returned a requester capability token.'
+    }
     $tracked = Invoke-RestMethod "http://127.0.0.1:4387/api/v1/requests/$trackedReference"
-    if ($tracked.data.reference -ne $trackedReference -or $tracked.data.messages.Count -ne 1) {
+    if ($tracked.data.reference -ne $trackedReference -or $tracked.data.messages.Count -ne 0) {
         throw 'Static frontend tracking API smoke check failed.'
     }
 

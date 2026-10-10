@@ -14,6 +14,6 @@ Create them in a local backend:
 ./demo/seed-requests.ps1 -ApiBaseUrl http://127.0.0.1:4320 -Apply
 ```
 
-The script accepts an HTTPS API origin for an explicitly chosen remote demo backend. Each run creates new requests; it does not reset or deduplicate data. The script prints only public references, never requester access tokens. Edit a case's `submission` fields to change its intake content or `suggested_unit_id` to change the walkthrough destination. Route cases through the authorized government UI after submission.
+The script accepts an HTTPS API origin for an explicitly chosen remote demo backend. Each run creates new requests; it does not reset or deduplicate data. Guest submissions return public references and do not issue requester access tokens. Edit a case's `submission` fields to change its intake content or `suggested_unit_id` to change the walkthrough destination. Route cases through the authorized government UI after submission.
 
 The fixtures contain synthetic names, addresses, agencies, and scenarios only. They do not represent real FOI submissions or real incidents.

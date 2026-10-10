@@ -20,6 +20,7 @@ pub struct AppConfig {
     pub ai_proxy_token: Option<String>,
     pub ai_model: String,
     pub requester_ai_enabled: bool,
+    pub guest_ai_enabled: bool,
     pub demo_reset_on_start: bool,
     pub enable_persona_login: bool,
 }
@@ -47,6 +48,8 @@ impl AppConfig {
         }
         let requester_ai_enabled =
             env::var("ITANONGMO_REQUESTER_AI_ENABLED").ok().as_deref() == Some("true");
+        let guest_ai_enabled =
+            env::var("ITANONGMO_GUEST_AI_ENABLED").ok().as_deref() == Some("true");
         let explicit_local_development =
             env::var("ITANONGMO_LOCAL_DEVELOPMENT").ok().as_deref() == Some("true");
         if requester_ai_enabled
@@ -55,6 +58,11 @@ impl AppConfig {
         {
             return Err(AppError::Validation(
                 "Requester AI requires HTTPS outside local development".into(),
+            ));
+        }
+        if guest_ai_enabled && !requester_ai_enabled {
+            return Err(AppError::Validation(
+                "Guest AI requires requester AI to be enabled".into(),
             ));
         }
         Ok(Self {
@@ -67,6 +75,7 @@ impl AppConfig {
             ai_proxy_token: non_empty_env("ITANONGMO_AI_PROXY_TOKEN"),
             ai_model: env::var("ITANONGMO_AI_MODEL").unwrap_or_else(|_| "Qwen/Qwen3-4B".into()),
             requester_ai_enabled,
+            guest_ai_enabled,
             demo_reset_on_start: env::var("ITANONGMO_DEMO_RESET_ON_START").ok().as_deref()
                 == Some("true"),
             enable_persona_login: env::var("ITANONGMO_ENABLE_PERSONA_LOGIN").ok().as_deref()

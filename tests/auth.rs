@@ -58,6 +58,7 @@ fn configured_api(
         ai_proxy_token: None,
         ai_model: "test".into(),
         requester_ai_enabled,
+        guest_ai_enabled: false,
         demo_reset_on_start: false,
         enable_persona_login: false,
     };

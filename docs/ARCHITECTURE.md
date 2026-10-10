@@ -56,6 +56,6 @@ Sources: [ExecuTorch ready-made LLM export](https://docs.pytorch.org/executorch/
 - SQLite uses foreign keys and WAL mode. One app instance is the supported MVP topology.
 - Uploaded public files are allowlisted, size-limited to 10 MiB, hashed, and stored outside the binary.
 - The versioned public API supports agency discovery, multi-agency submission, batch confirmation, request tracking, and requester AI drafting. Authentication remains a post-MVP release gate for broader use.
-- Submission returns one 64-hex-character requester capability token for the whole batch (two UUIDv4 values; approximately 244 bits of random entropy). Only its SHA-256 hash is stored. Public tracking remains readable by opaque reference, while requester replies and appeals require the token in an `Authorization: Bearer` header. The static client keeps it only in `sessionStorage` for the current browser tab and also shows it once for requester-managed recovery.
+- Guest submission returns opaque FOI references for public status tracking and does not issue a requester capability token. Guest reply and appeal mutations are unavailable; authenticated citizen accounts authorize those actions through their server-side session.
 - A multi-agency submission creates one batch with an independent child request per agency so deadlines, access, replies, disposition, and appeal do not leak across agencies.
 - Logs exclude request bodies, email addresses, credentials, cookies, and AI payloads. Audit metadata uses bounded identifiers and state changes.

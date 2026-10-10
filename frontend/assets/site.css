@@ -313,6 +313,21 @@ dialog {
   width: 100%;
 }
 
+.guest-request-page #guest-ai-options {
+  margin-block: 1.25rem;
+  padding: 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+  background: #fff;
+}
+
+.guest-request-page #guest-ai-preview {
+  max-height: 20rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 section {
   position: relative;
   margin-top: 1.25rem;

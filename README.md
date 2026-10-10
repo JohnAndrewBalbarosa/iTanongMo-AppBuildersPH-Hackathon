@@ -16,7 +16,7 @@ The defaults run locally without environment variables. Use `.env.example` as th
 
 Serve `frontend/` with a static-file server and open its URL. Configure its Rust API origin as described in `frontend/README.md`. The Rust root returns API metadata, while `/health` reports readiness. Submit with synthetic data only; seeded government personas are available from `government.html` when the API is configured.
 
-Each submission returns a requester access token once. Save it: public status is readable through the opaque request reference, but citizen replies and appeals require that token. The backend stores only its SHA-256 hash.
+Guest submissions return FOI references for public status tracking. Guest reply and appeal mutations are unavailable; authenticated citizen accounts use their server-side session for those actions.
 
 ## Verification
 

@@ -37,13 +37,9 @@ pub fn router(state: AppState) -> Router {
         .route("/api/v1/agencies", get(api_agencies))
         .route("/api/v1/agencies/search", get(api_agency_search))
         .route("/api/v1/requester-ai/draft", post(requester_ai_draft))
+        .route("/api/v1/requester-ai/guest-draft", post(guest_ai_draft))
         .route("/api/v1/requests", get(api_requests))
         .route("/api/v1/requests/{reference}", get(api_request))
-        .route(
-            "/api/v1/requests/{reference}/messages",
-            post(public_message),
-        )
-        .route("/api/v1/requests/{reference}/appeals", post(public_appeal))
         .route("/api/v1/notifications", get(api_notifications))
         .route("/api/v1/citizen/requests", get(citizen_requests))
         .route("/api/v1/citizen/requests/{reference}", get(citizen_request))
@@ -105,7 +101,6 @@ pub fn router(state: AppState) -> Router {
                 ])
                 .allow_headers([
                     header::CONTENT_TYPE,
-                    header::AUTHORIZATION,
                     HeaderName::from_static("x-csrf-token"),
                 ])
                 .vary([header::ORIGIN])
@@ -139,55 +134,6 @@ async fn health(State(state): State<AppState>) -> AppResult<Json<serde_json::Val
         .await?;
     Ok(Json(
         json!({"status":"ok","database":"ok","ai":if state.ai.is_some(){"configured"}else{"degraded"},"mode":"demo"}),
-    ))
-}
-
-#[derive(Deserialize)]
-struct PublicMessageForm {
-    body: String,
-}
-
-async fn public_message(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-    Path(reference): Path<String>,
-    Json(form): Json<PublicMessageForm>,
-) -> AppResult<(StatusCode, Json<serde_json::Value>)> {
-    let request = requests::load_request(&state.pool, &reference).await?;
-    let actor =
-        requests::authorize_requester(&state.pool, &reference, bearer_token(&headers)?).await?;
-    requests::add_message(&state.pool, &actor, &request.id, "public", &form.body).await?;
-    Ok((
-        StatusCode::CREATED,
-        Json(json!({"data":{"reference":reference,"outcome":"message_created"}})),
-    ))
-}
-
-#[derive(Deserialize)]
-struct PublicAppealForm {
-    reason: String,
-}
-
-async fn public_appeal(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-    Path(reference): Path<String>,
-    Json(form): Json<PublicAppealForm>,
-) -> AppResult<Json<serde_json::Value>> {
-    let request = requests::load_request(&state.pool, &reference).await?;
-    let actor =
-        requests::authorize_requester(&state.pool, &reference, bearer_token(&headers)?).await?;
-    requests::apply_action(
-        &state.pool,
-        &actor,
-        &request,
-        Action::FileAppeal,
-        &form.reason,
-        None,
-    )
-    .await?;
-    Ok(Json(
-        json!({"data":{"reference":reference,"outcome":"appeal_filed"}}),
     ))
 }
 
@@ -747,6 +693,7 @@ async fn api_config(State(state): State<AppState>) -> Json<serde_json::Value> {
             "api_version": "v1",
             "government_workspace_path": "government.html",
             "requester_ai_enabled": state.config.requester_ai_enabled && state.ai.is_some(),
+            "guest_ai_enabled": state.config.guest_ai_enabled && state.config.requester_ai_enabled && state.ai.is_some(),
             "maximum_agencies_per_submission": 10
         }
     }))
@@ -786,7 +733,6 @@ async fn api_submission_batch(
 fn submission_batch_json(batch: crate::requests::SubmissionBatch) -> serde_json::Value {
     json!({"data": {
         "batch_reference": batch.batch_reference,
-        "requester_access_token": batch.requester_access_token,
         "created_at": batch.created_at,
         "requests": batch.requests.into_iter().map(|request| json!({
             "reference": request.public_reference,
@@ -832,6 +778,31 @@ async fn requester_ai_draft(
     Ok(Json(json!({"data": draft})))
 }
 
+async fn guest_ai_draft(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(input): Json<RequesterAiInput>,
+) -> AppResult<Json<serde_json::Value>> {
+    if !state.config.guest_ai_enabled {
+        return Err(AppError::AiUnavailable);
+    }
+    ensure_requester_ai_enabled(&state)?;
+    let allowed_origin = state
+        .config
+        .frontend_origin
+        .as_deref()
+        .ok_or(AppError::Forbidden)?;
+    let request_origin = headers
+        .get(header::ORIGIN)
+        .and_then(|value| value.to_str().ok());
+    if request_origin != Some(allowed_origin) {
+        return Err(AppError::Forbidden);
+    }
+    let provider = state.ai.as_deref().ok_or(AppError::AiUnavailable)?;
+    let draft = state.requester_ai.draft_guest(provider, input).await?;
+    Ok(Json(json!({"data": draft})))
+}
+
 fn ensure_requester_ai_enabled(state: &AppState) -> AppResult<()> {
     if state.config.requester_ai_enabled {
         Ok(())
@@ -845,15 +816,6 @@ async fn api_agencies(State(state): State<AppState>) -> AppResult<Json<serde_jso
     Ok(Json(
         json!({"data":rows.into_iter().map(|a|json!({"id":a.id,"slug":a.slug,"short_name":a.short_name,"name":a.name,"official_url":a.official_url,"office_email":a.office_email,"source_url":a.source_url,"source_as_of":a.source_as_of})).collect::<Vec<_>>() }),
     ))
-}
-
-// Legacy request tracking uses its own access token, separate from retired AI credentials.
-fn bearer_token(headers: &HeaderMap) -> AppResult<&str> {
-    headers
-        .get(header::AUTHORIZATION)
-        .and_then(|value| value.to_str().ok())
-        .and_then(|value| value.strip_prefix("Bearer "))
-        .ok_or(AppError::Forbidden)
 }
 
 async fn api_requests(State(state): State<AppState>) -> AppResult<Json<serde_json::Value>> {

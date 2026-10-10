@@ -48,6 +48,14 @@ impl RequesterAiService {
         result
     }
 
+    pub async fn draft_guest(
+        &self,
+        provider: &dyn AiProvider,
+        input: RequesterAiInput,
+    ) -> AppResult<RequesterAiDraft> {
+        self.draft("__guest__", provider, input).await
+    }
+
     async fn generate_draft(
         &self,
         user_id: &str,
@@ -81,6 +89,7 @@ impl RequesterAiService {
 struct UsageLimits {
     users: HashMap<String, UsageWindow>,
     shared: UsageWindow,
+    guest_hourly: UsageWindow,
 }
 
 impl UsageLimits {
@@ -88,6 +97,7 @@ impl UsageLimits {
         Self {
             users: HashMap::new(),
             shared: UsageWindow::new(Instant::now()),
+            guest_hourly: UsageWindow::new(Instant::now()),
         }
     }
 
@@ -101,6 +111,14 @@ impl UsageLimits {
         {
             return Err(AppError::RateLimited);
         }
+        if user_id == "__guest__" {
+            if self.guest_hourly.calls == 0 || self.guest_hourly.expired(now, 3600) {
+                self.guest_hourly = UsageWindow::new(now);
+            }
+            if self.guest_hourly.calls >= 12 {
+                return Err(AppError::RateLimited);
+            }
+        }
         let user = self
             .users
             .entry(user_id.to_owned())
@@ -110,6 +128,9 @@ impl UsageLimits {
         }
         user.calls += 1;
         self.shared.calls += 1;
+        if user_id == "__guest__" {
+            self.guest_hourly.calls += 1;
+        }
         Ok(())
     }
 }
@@ -204,6 +225,24 @@ mod tests {
         ));
         limits
             .reserve("citizen", now + Duration::from_secs(3600))
+            .unwrap();
+    }
+
+    #[test]
+    fn guest_limit_is_shared_across_an_hour() {
+        let now = Instant::now();
+        let mut limits = UsageLimits::new();
+        for call in 0..12 {
+            limits
+                .reserve("__guest__", now + Duration::from_secs(call * 61))
+                .unwrap();
+        }
+        assert!(matches!(
+            limits.reserve("__guest__", now + Duration::from_secs(12 * 61)),
+            Err(AppError::RateLimited)
+        ));
+        limits
+            .reserve("__guest__", now + Duration::from_secs(3600))
             .unwrap();
     }
 }

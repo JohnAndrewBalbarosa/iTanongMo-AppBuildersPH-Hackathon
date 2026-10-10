@@ -75,8 +75,6 @@ pub async fn create_request_for(
         .unwrap_or_else(|| Uuid::new_v4().to_string());
     let batch_id = Uuid::new_v4().to_string();
     let batch_reference = batch_reference();
-    let requester_access_token = requester_access_token();
-    let requester_access_hash = hex::encode(Sha256::digest(requester_access_token.as_bytes()));
     let mut created_request_ids = Vec::with_capacity(agencies.len());
     let mut transaction = pool.begin().await?;
 
@@ -85,13 +83,12 @@ pub async fn create_request_for(
             .bind(&requester_id).bind(input.requester_name.trim()).bind(input.requester_email.trim()).bind("demo-v2").bind(now.to_rfc3339()).execute(&mut *transaction).await?;
     }
     sqlx::query(
-        "INSERT INTO request_batches(id,batch_reference,requester_id,created_at,requester_access_hash) VALUES (?,?,?,?,?)",
+        "INSERT INTO request_batches(id,batch_reference,requester_id,created_at) VALUES (?,?,?,?)",
     )
     .bind(&batch_id)
     .bind(&batch_reference)
     .bind(&requester_id)
     .bind(now.to_rfc3339())
-    .bind(requester_access_hash)
     .execute(&mut *transaction)
     .await?;
 
@@ -114,9 +111,7 @@ pub async fn create_request_for(
         revision: Some(1), outcome: "success",
         detail: serde_json::json!({"batch_reference":batch_reference,"agency_count":agencies.len(),"demo":true}),
     }).await?;
-    let mut batch = load_submission_batch(pool, &batch_reference).await?;
-    batch.requester_access_token = Some(requester_access_token);
-    Ok(batch)
+    load_submission_batch(pool, &batch_reference).await
 }
 
 pub async fn load_submission_batch(
@@ -137,7 +132,6 @@ pub async fn load_submission_batch(
         batch_reference,
         created_at,
         requests,
-        requester_access_token: None,
     })
 }
 
@@ -249,10 +243,6 @@ fn batch_reference() -> String {
 fn public_reference(short_name: &str) -> String {
     let suffix = Uuid::new_v4().simple().to_string()[..12].to_uppercase();
     format!("{}-{suffix}", short_name.to_uppercase())
-}
-
-fn requester_access_token() -> String {
-    format!("{}{}", Uuid::new_v4().simple(), Uuid::new_v4().simple())
 }
 
 pub async fn load_request(pool: &SqlitePool, reference: &str) -> AppResult<FoiRequest> {

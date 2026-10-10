@@ -5,6 +5,7 @@ use axum::{
 use chrono::{NaiveDate, Utc};
 use http_body_util::BodyExt;
 use itanongmo::{
+    ai::AiProvider,
     app::{AppConfig, AppState},
     error::AppError,
     identity::{ActorContext, ActorType, Role},
@@ -57,6 +58,37 @@ fn api(pool: SqlitePool) -> axum::Router {
 }
 
 fn api_with_persona_login(pool: SqlitePool, enable_persona_login: bool) -> axum::Router {
+    api_with_guest_ai(pool, enable_persona_login, false)
+}
+
+struct DraftProvider;
+
+#[async_trait::async_trait]
+impl AiProvider for DraftProvider {
+    fn model_id(&self) -> &str {
+        "test-draft"
+    }
+
+    async fn generate_json(
+        &self,
+        _: &str,
+        _: serde_json::Value,
+    ) -> itanongmo::error::AppResult<serde_json::Value> {
+        Ok(serde_json::json!({
+            "email_body": "Please provide the public program reports.",
+            "description": "Public program reports and supporting records.",
+            "purpose": "Public research",
+            "urgency_details": "",
+            "agency_queries": ["Department of Science and Technology"]
+        }))
+    }
+}
+
+fn api_with_guest_ai(
+    pool: SqlitePool,
+    enable_persona_login: bool,
+    guest_ai_enabled: bool,
+) -> axum::Router {
     let config = AppConfig {
         bind: "127.0.0.1:0".into(),
         database_url: "sqlite::memory:".into(),
@@ -66,7 +98,8 @@ fn api_with_persona_login(pool: SqlitePool, enable_persona_login: bool) -> axum:
         ai_base_url: None,
         ai_proxy_token: None,
         ai_model: "test".into(),
-        requester_ai_enabled: false,
+        requester_ai_enabled: guest_ai_enabled,
+        guest_ai_enabled,
         demo_reset_on_start: false,
         enable_persona_login,
     };
@@ -74,9 +107,69 @@ fn api_with_persona_login(pool: SqlitePool, enable_persona_login: bool) -> axum:
         pool,
         config: Arc::new(config),
         auth: itanongmo::auth::AuthService::new().unwrap(),
-        ai: None,
+        ai: guest_ai_enabled.then(|| Arc::new(DraftProvider) as Arc<dyn AiProvider>),
         requester_ai: itanongmo::requester_ai::RequesterAiService::new().unwrap(),
     })
+}
+
+#[tokio::test]
+async fn guest_ai_requires_flag_and_frontend_origin_and_enforces_limit() {
+    let body = serde_json::json!({
+        "manual_title": "Public program records",
+        "what_to_ask": "Please provide the latest public program reports and records."
+    })
+    .to_string();
+    let request = |origin: Option<&str>| {
+        let mut builder = Request::builder()
+            .method("POST")
+            .uri("/api/v1/requester-ai/guest-draft")
+            .header(header::CONTENT_TYPE, "application/json");
+        if let Some(origin) = origin {
+            builder = builder.header(header::ORIGIN, origin);
+        }
+        builder.body(Body::from(body.clone())).unwrap()
+    };
+    let disabled = api(database().await)
+        .oneshot(request(Some("https://example.github.io")))
+        .await
+        .unwrap();
+    assert_eq!(disabled.status(), StatusCode::SERVICE_UNAVAILABLE);
+
+    let router = api_with_guest_ai(database().await, false, true);
+    assert_eq!(
+        router
+            .clone()
+            .oneshot(request(None))
+            .await
+            .unwrap()
+            .status(),
+        StatusCode::FORBIDDEN
+    );
+    assert_eq!(
+        router
+            .clone()
+            .oneshot(request(Some("https://other.example")))
+            .await
+            .unwrap()
+            .status(),
+        StatusCode::FORBIDDEN
+    );
+    for _ in 0..5 {
+        let response = router
+            .clone()
+            .oneshot(request(Some("https://example.github.io")))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+    assert_eq!(
+        router
+            .oneshot(request(Some("https://example.github.io")))
+            .await
+            .unwrap()
+            .status(),
+        StatusCode::TOO_MANY_REQUESTS
+    );
 }
 
 #[tokio::test]
@@ -250,18 +343,15 @@ async fn cors_preflight_never_echoes_an_unconfigured_origin() {
 }
 
 #[tokio::test]
-async fn configured_origin_preflight_allows_requester_authorization_header() {
+async fn configured_origin_preflight_allows_submission_content_type_header() {
     let response = api(database().await)
         .oneshot(
             Request::builder()
                 .method("OPTIONS")
-                .uri("/api/v1/requests/example/messages")
+                .uri("/api/v1/submissions")
                 .header(header::ORIGIN, "https://example.github.io")
                 .header(header::ACCESS_CONTROL_REQUEST_METHOD, "POST")
-                .header(
-                    header::ACCESS_CONTROL_REQUEST_HEADERS,
-                    "authorization,content-type",
-                )
+                .header(header::ACCESS_CONTROL_REQUEST_HEADERS, "content-type")
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -278,7 +368,6 @@ async fn configured_origin_preflight_allows_requester_authorization_header() {
         .unwrap()
         .to_str()
         .unwrap();
-    assert!(allowed_headers.contains("authorization"));
     assert!(allowed_headers.contains("content-type"));
 }
 
@@ -380,110 +469,39 @@ async fn requester_ai_exposes_one_json_draft_endpoint() {
 }
 
 #[tokio::test]
-async fn requester_capability_allows_only_its_own_message_and_appeal() {
-    let pool = database().await;
-    let first = requests::create_request(
-        &pool,
-        request_input(
-            "capability-owner@example.test",
-            "Records needed for requester capability integration verification.",
-        ),
-    )
-    .await
-    .unwrap();
-    let second = requests::create_request(
-        &pool,
-        request_input(
-            "different-owner@example.test",
-            "A separate request used to prove object-level authorization.",
-        ),
-    )
-    .await
-    .unwrap();
-    let token = first.requester_access_token.clone().unwrap();
-    let first_reference = &first.requests[0].public_reference;
-    let second_reference = &second.requests[0].public_reference;
-    let app = api(pool.clone());
-
-    let wrong_object = app
-        .clone()
-        .oneshot(
-            Request::post(format!("/api/v1/requests/{second_reference}/messages"))
-                .header(header::AUTHORIZATION, format!("Bearer {token}"))
-                .header(header::CONTENT_TYPE, "application/json")
-                .body(Body::from(r#"{"body":"Unauthorized cross-request reply"}"#))
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-    assert_eq!(wrong_object.status(), StatusCode::FORBIDDEN);
-
-    let reply = app
-        .clone()
-        .oneshot(
-            Request::post(format!("/api/v1/requests/{first_reference}/messages"))
-                .header(header::AUTHORIZATION, format!("Bearer {token}"))
-                .header(header::CONTENT_TYPE, "application/json")
-                .body(Body::from(
-                    r#"{"body":"Here is the requested clarification."}"#,
-                ))
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-    assert_eq!(reply.status(), StatusCode::CREATED);
-
-    sqlx::query(
-        "UPDATE foi_requests SET status='denied', disposition='denied' WHERE public_reference=?",
-    )
-    .bind(first_reference)
-    .execute(&pool)
-    .await
-    .unwrap();
-    let appeal = app
-        .oneshot(
-            Request::post(format!("/api/v1/requests/{first_reference}/appeals"))
-                .header(header::AUTHORIZATION, format!("Bearer {token}"))
-                .header(header::CONTENT_TYPE, "application/json")
-                .body(Body::from(r#"{"reason":"The identified exemption does not cover the requested aggregate record."}"#))
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-    assert_eq!(appeal.status(), StatusCode::OK);
-    let updated = requests::load_request(&pool, first_reference)
-        .await
-        .unwrap();
-    assert_eq!(updated.status, "appealed");
-}
-
-#[tokio::test]
-async fn requester_access_token_is_returned_once_and_stored_only_as_a_hash() {
+async fn guest_submission_uses_reference_only_without_reply_or_appeal_routes() {
     let pool = database().await;
     let created = requests::create_request(
         &pool,
         request_input(
-            "one-time-token@example.test",
-            "Records for verifying one-time requester access token delivery.",
+            "reference-only@example.test",
+            "Records for verifying reference-only guest request tracking.",
         ),
     )
     .await
     .unwrap();
-    let token = created.requester_access_token.clone().unwrap();
-    assert_eq!(token.len(), 64);
-    let stored_hash: String = sqlx::query_scalar(
+    let stored_hash: Option<String> = sqlx::query_scalar(
         "SELECT requester_access_hash FROM request_batches WHERE batch_reference=?",
     )
     .bind(&created.batch_reference)
     .fetch_one(&pool)
     .await
     .unwrap();
-    assert_ne!(stored_hash, token);
+    assert!(stored_hash.is_none());
 
-    let loaded = requests::load_submission_batch(&pool, &created.batch_reference)
-        .await
-        .unwrap();
-    assert!(loaded.requester_access_token.is_none());
+    let reference = &created.requests[0].public_reference;
+    let app = api(pool);
+    for path in [
+        format!("/api/v1/requests/{reference}/messages"),
+        format!("/api/v1/requests/{reference}/appeals"),
+    ] {
+        let response = app
+            .clone()
+            .oneshot(Request::post(path).body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
 }
 
 #[tokio::test]

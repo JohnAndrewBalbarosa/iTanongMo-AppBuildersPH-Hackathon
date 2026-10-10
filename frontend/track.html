@@ -5,20 +5,9 @@
   <h1>Track an FOI request</h1>
   <form id="tracking-form">
     <label>Request reference <input name="reference" required></label>
-    <label>Requester access token <input name="access_token" autocomplete="off" minlength="64" maxlength="64"></label>
     <button type="submit">View status</button>
   </form>
-  <p>No account is needed. Enter the FOI reference you saved after submission to view public status. The one-time requester access token is needed only to reply or file an appeal.</p>
+  <p>No account is needed. Enter the FOI reference you saved after submission to view public status.</p>
   <section id="tracking-output" aria-live="polite"></section>
-  <section id="requester-actions" hidden>
-    <h2>Requester actions</h2>
-    <label>Public reply <textarea id="requester-message" minlength="2" maxlength="5000"></textarea></label>
-    <button type="button" id="send-requester-message">Send reply</button>
-    <div id="appeal-controls" hidden>
-      <label>Appeal reason <textarea id="appeal-reason" minlength="2" maxlength="5000"></textarea></label>
-      <button type="button" id="file-appeal">File appeal</button>
-    </div>
-    <p id="requester-action-status" role="status"></p>
-  </section>
 </main>
 <script src="config.js"></script><script src="assets/language.js"></script><script src="assets/site.js"></script><script src="assets/track.js"></script></body></html>

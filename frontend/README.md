@@ -13,9 +13,9 @@ The sticky header offers a Tagalog/English selector on every page, including bot
 
 The deployment workflow validates the API origin and writes it to `config.js` inside the deployment artifact. No API key or server credential belongs in repository variables or static files.
 
-Citizen AI drafting uses the shared server-owned backend provider. The citizen signs in and sends a CSRF-protected request; no user API key or provider selection is accepted. AI output is schema-validated, previewed, and applied only on explicit user action. Identity, title, agency selection, consent, and submission remain under citizen control. Limits per API process: 5 attempts/user/minute, 60 attempts/hour total, 2 concurrent calls, 45-second timeout, and 2,048 output tokens. Restarting the process resets in-memory limits; multiple replicas need a shared limiter or upstream budget enforcement.
+Citizen and guest AI drafting use the shared server-owned backend provider. Signed-in citizens send a CSRF-protected request; guests use the separately enabled `/api/v1/requester-ai/guest-draft` endpoint. No user API key or provider selection is accepted. AI output is schema-validated, previewed, and applied only on explicit user action. Identity, title, agency selection, consent, and submission remain under citizen control. Limits per API process: 5 attempts/user/minute, 12 guest attempts/hour, 60 attempts/hour total, 2 concurrent calls, 45-second timeout, and 2,048 output tokens. Restarting the process resets in-memory limits; multiple replicas need a shared limiter or upstream budget enforcement.
 
-The citizen portal uses its server-side session cookie and CSRF token for submissions, replies, and appeals. Legacy request tracking still supports batch capability tokens through the `Authorization` header; those tokens are separate from AI credentials. `request.html` redirects to the authenticated citizen portal.
+The citizen portal uses its server-side session cookie and CSRF token for submissions, replies, and appeals. `request.html` lets guests submit without an account; `track.html` shows public status using only the FOI reference. Guest submission does not issue a capability token, and guest reply/appeal actions are unavailable.
 
 ## Demonstration portals
 

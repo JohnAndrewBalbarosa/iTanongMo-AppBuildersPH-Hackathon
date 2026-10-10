@@ -16,6 +16,15 @@
     <section id="guest-request-section" aria-labelledby="guest-request-title">
       <h2 id="guest-request-title">Submit without an account</h2>
       <form id="foi-request-form">
+        <details id="guest-ai-options">
+          <summary>Ask AI to draft your request</summary>
+          <p>Describe the records you need. Review the draft before adding it to the form. You can always write the request yourself.</p>
+          <label>What would you like to ask? <textarea id="guest-ai-question" minlength="20" maxlength="8000"></textarea></label>
+          <button type="button" id="guest-ai-generate" disabled>Draft with AI</button>
+          <p id="guest-ai-status" role="status"></p>
+          <pre id="guest-ai-preview" aria-label="AI draft preview"></pre>
+          <button type="button" id="guest-ai-apply" disabled>Use this draft</button>
+        </details>
         <fieldset>
           <legend>Your contact details</legend>
           <label>Name <input name="requester_name" required minlength="2" maxlength="120" autocomplete="name"></label>
@@ -33,10 +42,10 @@
         </fieldset>
         <fieldset>
           <legend>Records requested</legend>
-          <label>Title <input name="title" required minlength="5" maxlength="180"></label>
-          <label>Description <textarea name="description" required minlength="20" maxlength="8000"></textarea></label>
-          <label>Purpose <textarea name="purpose" required minlength="3" maxlength="1000"></textarea></label>
-          <label>Urgency or safety context <textarea name="urgency_details" maxlength="1000"></textarea></label>
+          <label>Title <input id="guest-request-title-input" name="title" required minlength="5" maxlength="180"></label>
+          <label>Description <textarea id="guest-request-description" name="description" required minlength="20" maxlength="8000"></textarea></label>
+          <label>Purpose <textarea id="guest-request-purpose" name="purpose" required minlength="3" maxlength="1000"></textarea></label>
+          <label>Urgency or safety context <textarea id="guest-request-urgency" name="urgency_details" maxlength="1000"></textarea></label>
         </fieldset>
         <label><input type="checkbox" name="consent" value="yes" required> I acknowledge the demo privacy notice.</label>
         <button type="submit" id="submit-request" disabled>Submit request</button>
@@ -45,15 +54,15 @@
     </section>
     <section id="submission-output" aria-labelledby="submission-title" tabindex="-1" hidden>
       <h2 id="submission-title">Save your request details</h2>
-      <p>Save each FOI reference to track its public status. Save the requester access token separately if you may need to reply or file an appeal. The token is shown only now.</p>
+      <p>Save each FOI reference to track its public status. Each agency has its own reference.</p>
       <p><strong>Batch reference:</strong> <code id="batch-reference"></code></p>
-      <p><strong>Requester access token:</strong> <code id="requester-access-token"></code></p>
       <ul id="submission-results"></ul>
       <p><a href="track.html">Track a request</a></p>
     </section>
   </main>
   <script src="config.js"></script>
   <script src="assets/language.js"></script><script src="assets/site.js"></script>
+  <script src="assets/citizen-ai.js"></script>
   <script src="assets/request.js"></script>
 </body>
 </html>

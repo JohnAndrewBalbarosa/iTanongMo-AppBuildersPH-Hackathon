@@ -12,7 +12,7 @@ Included now:
 - Government Modal AI drafting and triage with explicit human review. Government AI output cannot self-publish.
 - Citizen AI drafting uses the shared server-owned backend provider. The citizen signs in and sends a CSRF-protected request; no user API key or provider selection is accepted. AI output is schema-validated, previewed, and applied only on explicit user action. Identity, title, agency selection, consent, and submission remain under citizen control. Limits per API process: 5 attempts/user/minute, 60 attempts/hour total, 2 concurrent calls, 45-second timeout, and 2,048 output tokens. Restarting the process resets in-memory limits; multiple replicas need a shared limiter or upstream budget enforcement.
 - Multi-agency intake fans out into independently tracked agency requests under one submission batch.
-- Citizen replies and appeals use a one-time-disclosed batch capability token until verified identity replaces it. The backend stores only the token hash and authorizes every mutation against the request's batch.
+- Guest users track public status by FOI reference only and cannot reply or appeal. Authenticated citizen accounts authorize reply and appeal mutations through their server-side session.
 
 Deferred after MVP:
 

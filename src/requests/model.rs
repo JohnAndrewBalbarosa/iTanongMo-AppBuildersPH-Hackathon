@@ -37,7 +37,6 @@ pub struct SubmissionBatch {
     pub batch_reference: String,
     pub created_at: String,
     pub requests: Vec<PublicRequestRow>,
-    pub requester_access_token: Option<String>,
 }
 
 #[derive(Clone, Debug, FromRow)]

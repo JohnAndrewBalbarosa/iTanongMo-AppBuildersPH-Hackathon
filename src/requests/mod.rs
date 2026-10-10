@@ -1,6 +1,5 @@
 //! FOI intake, public conversation, statutory deadlines, and state transitions.
 
-mod access;
 mod citizen;
 mod conversation;
 mod deadlines;
@@ -9,7 +8,6 @@ mod intake;
 mod model;
 mod workflow;
 
-pub use access::authorize_requester;
 pub use citizen::{CitizenRequestSummary, list_owned_requests, load_owned_request};
 pub use conversation::{Message, add_message, list_messages};
 pub use deadlines::{add_working_days, initial_due_date};

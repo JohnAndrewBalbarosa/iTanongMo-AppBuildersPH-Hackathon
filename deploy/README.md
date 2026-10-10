@@ -20,7 +20,7 @@ The public demo accounts and seeded requests are synthetic; do not use this depl
 - `GET /health` returns `status=ok`; `ai=degraded` is acceptable when AI is intentionally disabled.
 - Exact-origin CORS emits only the configured GitHub Pages origin and never reflects an unconfigured request origin.
 - GitHub Pages can discover agencies, create a multi-agency batch, and track each child reference through the Rust API.
-- A requester can use the one-time batch capability token to post a reply and file an eligible appeal, while the same token is rejected for a different batch.
+- A guest requester can track public status by FOI reference only; guest reply and appeal endpoints are unavailable.
 - GitHub Pages government persona selection and Kanban work through the JSON API; CSV export remains available from the API.
 - A completed government AI draft cannot publish with a mismatched output hash, without factual-review confirmation, or more than once.
 - A test file restores successfully with `sqlite3 restored.db ".restore backup.db"` and passes `PRAGMA integrity_check`.
@@ -33,6 +33,6 @@ Stop the service, preserve the failed database and WAL files, restore the latest
 
 ## Shared citizen AI
 
-Configure `ITANONGMO_AI_BASE_URL`, `ITANONGMO_AI_PROXY_TOKEN`, and `ITANONGMO_AI_MODEL` in the private server environment, then set `ITANONGMO_REQUESTER_AI_ENABLED=true`. The existing HTTPS OpenAI-compatible provider must support structured JSON output and the `requester_draft` task contract. Reuse the same configured provider as government drafting. Do not place credentials in Pages, repository variables, or static assets.
+Configure `ITANONGMO_AI_BASE_URL`, `ITANONGMO_AI_PROXY_TOKEN`, and `ITANONGMO_AI_MODEL` in the private server environment, then set `ITANONGMO_REQUESTER_AI_ENABLED=true`. Set `ITANONGMO_GUEST_AI_ENABLED=true` separately to offer AI drafts on the public guest request form. The existing HTTPS OpenAI-compatible provider must support structured JSON output and the `requester_draft` task contract. Reuse the same configured provider as government drafting. Do not place credentials in Pages, repository variables, or static assets. Guest calls require the exact configured frontend `Origin`; one API process allows 5 guest attempts/minute and 12 guest attempts/hour, included in the shared 60/hour cap.
 
-Deploy the API and frontend together after approval. Verify citizen login, AI draft preview/apply, manual submission, wrong-role/CSRF rejection, `429` limits, and provider-unavailable fallback. BYOK is retired; old `request.html` URLs redirect to the citizen portal. Rollback: restore the prior binary/frontend and keep `ITANONGMO_REQUESTER_AI_ENABLED=false` until both versions match. The token-TTL setting is retired.
+Deploy the API and frontend together after approval. Verify citizen login, AI draft preview/apply, guest draft preview/apply, manual guest submission, reference-only tracking, wrong-role/CSRF and wrong-origin rejection, `429` limits, and provider-unavailable fallback. BYOK is retired. Rollback: restore the prior binary/frontend and keep `ITANONGMO_GUEST_AI_ENABLED=false` until both versions match. The token-TTL setting is retired.
