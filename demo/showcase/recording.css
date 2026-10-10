@@ -1,0 +1,14 @@
+/* Recording-only framing: prevent homepage section rules narrowing the board. */
+.government-portal > section:nth-of-type(n + 2) {
+  display: block;
+  width: 100%;
+  margin-right: 0;
+}
+
+.government-portal > #government-case-panel {
+  display: grid;
+}
+
+html {
+  scroll-behavior: auto;
+}
