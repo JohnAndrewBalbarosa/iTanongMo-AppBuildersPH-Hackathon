@@ -170,6 +170,14 @@
     document.head.append(stylesheet);
   }
 
+  function loadPortalStyles() {
+    if (!["citizen", "government"].includes(document.body.dataset.portalPage)) return;
+    const stylesheet = document.createElement("link");
+    stylesheet.rel = "stylesheet";
+    stylesheet.href = "assets/portal-layout.css";
+    document.head.append(stylesheet);
+  }
+
   function renderActionIcons() {
     const actionIcons = new Map([
       ["open-ai-draft", "sparkles"],
@@ -185,6 +193,7 @@
   }
 
   loadStyles();
+  loadPortalStyles();
   renderHeader();
   renderFooter();
   renderActionIcons();

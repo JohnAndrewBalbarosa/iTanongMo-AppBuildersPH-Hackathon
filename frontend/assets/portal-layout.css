@@ -1,0 +1,114 @@
+/* Portal sections share one spacing rhythm instead of the public-page section layout. */
+.portal-dashboard > .portal-stat-grid {
+  margin: 0 0 1.5rem;
+}
+
+.portal-dashboard > .portal-panel {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  margin: 0 0 1.5rem;
+}
+
+main.portal-dashboard .citizen-workspace {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 1.5rem;
+}
+
+.citizen-workspace > .portal-panel {
+  min-width: 0;
+  margin: 0;
+}
+
+.portal-dashboard .kanban-board > .kanban-column {
+  margin: 0;
+}
+
+.portal-dashboard > .case-workbench {
+  display: block;
+}
+
+.portal-dashboard .case-summary {
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 1.5rem;
+}
+
+.portal-dashboard .case-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 1.5rem;
+}
+
+.portal-dashboard .case-actions > form {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+}
+
+.portal-dashboard .case-actions > .government-ai {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  margin: 0;
+}
+
+.portal-dashboard .case-actions > .form-status {
+  grid-column: 1 / -1;
+}
+
+.local-model-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.local-model-actions a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 3rem;
+  border: 1px solid var(--brand);
+  border-radius: 0.25rem;
+  padding: 0.72rem 1.25rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.local-model-scores {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.local-model-scores li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+}
+
+@media (max-width: 56rem) {
+  main.portal-dashboard .citizen-workspace,
+  .portal-dashboard .case-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .portal-dashboard .case-actions > .government-ai,
+  .portal-dashboard .case-actions > .form-status {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+
+@media (max-width: 40rem) {
+  .local-model-scores {
+    grid-template-columns: 1fr;
+  }
+}
